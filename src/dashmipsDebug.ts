@@ -31,6 +31,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject();
     private dashmipsClient: DashmipsClient;
     private variableHandles = new Handles<string>();
+    private dashmipsPid: number;
 
     public constructor() {
         super("");
@@ -80,13 +81,14 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         const termArgs: DebugProtocol.RunInTerminalRequestArguments = {
             kind: 'integrated',
-            title: 'Dashmips Debug Console',
+            title: 'Dashmips Console',
             cwd: dirname(args.program),
             args: `python -m dashmips debug`.split(' '),
         };
 
         this.runInTerminalRequest(termArgs, 5000, (res) => {
             if (res.success) {
+                this.dashmipsPid = res.body.processId;
                 this.dashmipsClient.start(args.program);
                 this.sendResponse(response);
             } else {
@@ -234,5 +236,14 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 			variablesReference: 0
 		};
 		this.sendResponse(response);
-	}
+    }
+
+    protected disconnectRequest(
+        response: DebugProtocol.DisconnectResponse,
+        args: DebugProtocol.DisconnectArguments
+    ) {
+        process.kill(this.dashmipsPid, 'SIGTERM');
+        this.shutdown();
+    }
+
 }

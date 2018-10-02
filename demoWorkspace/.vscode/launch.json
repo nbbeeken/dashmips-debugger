@@ -1,18 +1,11 @@
 {
 	"version": "0.2.0",
     "configurations": [
-    {
-        "type": "mock",
-        "request": "launch",
-        "name": "Ask for file name",
-        "program": "${workspaceFolder}/${command:AskForProgramName}",
-        "stopOnEntry": true
-    },
         {
             "type": "dashmips",
             "request": "launch",
-            "name": "Run main.mips",
-            "program": "${workspaceFolder}/main.mips",
+            "name": "Current File",
+            "program": "${file}",
             "stopOnEntry": true
         }
     ]

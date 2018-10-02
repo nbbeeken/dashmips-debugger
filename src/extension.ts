@@ -10,16 +10,6 @@ import { DashmipsDebugSession } from './dashmipsDebug';
 const EMBED_DEBUG_ADAPTER: "yes" | "no" | string = process.env.EMBED_DEBUG_ADAPTER || "yes";
 
 export function activate(context: vscode.ExtensionContext) {
-
-    context.subscriptions.push(
-        vscode.commands.registerCommand('extension.dashmips.getProgramName', () => {
-            return vscode.window.showInputBox({
-                placeHolder: "Please enter the name of a mips file in workspace",
-                value: "test.mips"
-            });
-        })
-    );
-
     const provider = new DashmipsConfigurationProvider();
     context.subscriptions.push(
         debug.registerDebugConfigurationProvider('dashmips', provider)

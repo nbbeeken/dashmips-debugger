@@ -8,8 +8,8 @@
         {
             "type": "dashmips",
             "request": "launch",
-            "name": "Ask for file name",
-            "program": "${workspaceFolder}/demoWorkspace/main.mips",
+            "name": "Main Mips File",
+            "program": "${file}",
             "stopOnEntry": true
         },
         {
@@ -24,10 +24,7 @@
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"
             ],
-            "preLaunchTask": "npm: watch",
-            // "env": {
-            //     "EMBED_DEBUG_ADAPTER": "yes"
-            // }
+            "preLaunchTask": "npm: watch"
         },
         {
             "name": "Extension Tests",
