@@ -1,8 +1,6 @@
 import { connect, TcpNetConnectOpts } from "net";
 import { execSync, exec, ChildProcess } from "child_process";
 import { EventEmitter } from "events";
-import { SourceBreakpoint } from "vscode";
-import { Source } from "vscode-debugadapter";
 
 export const defaultConnectOpts: TcpNetConnectOpts = {
     host: "localhost",
