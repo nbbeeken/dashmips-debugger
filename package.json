@@ -1,0 +1,103 @@
+{
+    "name": "dashmips-debugger",
+    "displayName": "dashmips-debugger",
+    "description": "Debugs mips while executing in Dashmips interpreter",
+    "version": "0.0.1",
+    "publisher": "roadkillco",
+    "engines": {
+        "vscode": "^1.27.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "main": "./out/extension",
+    "activationEvents": [
+        "onDebug",
+        "onCommand:extention.dashmips.getProgramName"
+    ],
+    "contributes": {
+        "breakpoints": [
+            {
+                "language": "mips"
+            }
+        ],
+        "debuggers": [
+            {
+                "type": "dashmips",
+                "label": "dashmips (Ask for File)",
+                "program": "./out/debugAdapter.js",
+                "runtime": "node",
+                "configurationAttributes": {
+                    "launch": {
+                        "required": [
+                            "program"
+                        ],
+                        "properties": {
+                            "program": {
+                                "type": "string",
+                                "description": "Path to mips file with main label",
+                                "default": "${workspaceFolder}/${command:AskForProgramName}"
+                            },
+                            "stopOnEntry": {
+                                "type": "boolean",
+                                "description": "Automatically stop after launch.",
+                                "default": true
+                            },
+                            "trace": {
+                                "type": "boolean",
+                                "description": "Enable logging of the Debug Adapter Protocol.",
+                                "default": true
+                            }
+                        }
+                    }
+                },
+                "initialConfigurations": [
+                    {
+                        "type": "dashmips",
+                        "request": "launch",
+                        "name": "dashmips (Ask for File)",
+                        "program": "${workspaceFolder}/${command:AskForProgramName}",
+                        "stopOnEntry": true
+                    }
+                ],
+                "configurationSnippets": [
+                    {
+                        "label": "Mips Debug: Launch",
+                        "description": "A new configuration for 'debugging' a user selected mips file.",
+                        "body": {
+                            "type": "dashmips",
+                            "request": "launch",
+                            "name": "Ask for file name",
+                            "program": "^\"\\${workspaceFolder}/\\${command:AskForProgramName}\"",
+                            "stopOnEntry": true
+                        }
+                    }
+                ],
+                "variables": {
+                    "AskForProgramName": "extension.dashmips.getProgramName"
+                }
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "mocha -u tdd ./out/tests/"
+    },
+    "devDependencies": {
+        "@types/mocha": "^2.2.42",
+        "@types/node": "^8.10.25",
+        "mocha": "^5.2.0",
+        "tslint": "^5.8.0",
+        "typescript": "^2.6.1",
+        "vsce": "^1.51.1",
+        "vscode": "^1.1.21",
+        "vscode-debugadapter-testsupport": "^1.32.0"
+    },
+    "dependencies": {
+        "vscode-debugadapter": "^1.32.1",
+        "vscode-debugprotocol": "^1.32.0"
+    }
+}

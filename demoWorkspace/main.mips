@@ -1,0 +1,53 @@
+# Sum all the numbers from 1 up to the number inputted
+
+
+.data
+msg1:   .asciiz "Number of integers (N)?  "
+msg2:   .asciiz "Sum="
+lf:     .asciiz "\n"
+
+.text
+
+exit:
+    # Print "Sum="
+    li      $v0, 4                     # print_string syscall code = 4
+    la      $a0, msg2
+    syscall
+    # Print sum value
+    li      $v0, 1                     # print_int syscall code = 1
+    move    $a0, $t2
+    syscall
+    # Print newline
+    li      $v0, 4                     # print_string syscall code = 4
+    la      $a0, lf
+    syscall
+    # # Dump JSON
+    # li      $a0, 0                     # new feature!
+    # li      $v0, 45                    # 45 dump json of program state
+    # syscall
+    # Exit program
+    li      $a0, 0                     # new feature! $a0 holds exit_code
+    li      $v0, 10                    # exit
+    syscall
+
+main:
+    li      $v0, 4                     # print_string syscall code = 4
+    la      $a0, msg1
+    syscall
+
+    # Get N from user and save
+    li      $v0, 5                     # read_int syscall code = 5
+    syscall
+    move    $t0, $v0                   # syscall results returned in $v0
+
+    # Initialize registers
+    move    $t1, $zero                 # initialize counter (i)
+    move    $t2, $zero                 # initialize sum
+
+
+
+    loop:
+        addi    $t1, $t1, 1                # i = i + 1
+        add     $t2, $t2, $t1              # sum = sum + i
+        beq     $t0, $t1, exit             # if i = N, continue
+        j       loop
