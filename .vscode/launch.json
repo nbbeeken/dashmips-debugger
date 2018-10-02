@@ -17,20 +17,11 @@
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"
             ],
-            "preLaunchTask": "npm: watch"
+            "preLaunchTask": "npm: watch",
+            "env": {
+                "EMBED_DEBUG_ADAPTER": "yes"
+            }
         },
-        {
-			"name": "Server",
-			"type": "node",
-			"request": "launch",
-			"cwd": "${workspaceFolder}",
-			"program": "${workspaceFolder}/src/debugAdapter.ts",
-			"args": [
-                "--server=4711",
-                "${workspaceFolder}/demoWorkspace",
-            ],
-			"outFiles": [ "${workspaceFolder}/out/**/*.js" ]
-		},
         {
             "name": "Extension Tests",
             "type": "extensionHost",
@@ -43,7 +34,10 @@
             "outFiles": [
                 "${workspaceFolder}/out/test/**/*.js"
             ],
-            "preLaunchTask": "npm: watch"
+            "preLaunchTask": "npm: watch",
+            "env": {
+                "EMBED_DEBUG_ADAPTER": "no"
+            }
         }
     ]
 }

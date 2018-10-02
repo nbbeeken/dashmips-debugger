@@ -7,7 +7,7 @@ import {
 } from 'vscode';
 import { DashmipsDebugSession } from './dashmipsDebug';
 
-const EMBED_DEBUG_ADAPTER = true;
+const EMBED_DEBUG_ADAPTER: "yes" | "no" | string = process.env.EMBED_DEBUG_ADAPTER || "no";
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -55,7 +55,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
             .then(_ => { return undefined; });
         }
 
-        if (EMBED_DEBUG_ADAPTER) {
+        if (EMBED_DEBUG_ADAPTER === "yes") {
             // DEBUGGING ONLY
             // THIS WILL MAKE BREAKPOINTS IN debugAdapter.ts work
 			if (!this.server) {

@@ -4,11 +4,16 @@
     "description": "Debugs mips while executing in Dashmips interpreter",
     "version": "0.0.1",
     "publisher": "roadkillco",
+    "repository": {
+		"type": "git",
+		"url": "https://github.com/nbbeeken/dashmips-debugger.git"
+	},
+    "icon": "images/dashmips-debugger-icon.png",
     "engines": {
         "vscode": "^1.27.0"
     },
     "categories": [
-        "Other"
+        "Debuggers"
     ],
     "main": "./out/extension",
     "activationEvents": [
@@ -24,7 +29,7 @@
         "debuggers": [
             {
                 "type": "dashmips",
-                "label": "dashmips (Ask for File)",
+                "label": "dashmips (Current File)",
                 "program": "./out/debugAdapter.js",
                 "runtime": "node",
                 "configurationAttributes": {
@@ -36,7 +41,7 @@
                             "program": {
                                 "type": "string",
                                 "description": "Path to mips file with main label",
-                                "default": "${workspaceFolder}/${command:AskForProgramName}"
+                                "default": "${workspaceFolder}/${file}"
                             },
                             "stopOnEntry": {
                                 "type": "boolean",
@@ -55,8 +60,8 @@
                     {
                         "type": "dashmips",
                         "request": "launch",
-                        "name": "dashmips (Ask for File)",
-                        "program": "${workspaceFolder}/${command:AskForProgramName}",
+                        "name": "dashmips (Current File)",
+                        "program": "${workspaceFolder}/${file}",
                         "stopOnEntry": true
                     }
                 ],
