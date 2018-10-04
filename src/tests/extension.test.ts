@@ -1,7 +1,7 @@
 import * as assert from 'assert';
 import {DebugClient} from 'vscode-debugadapter-testsupport';
 
-suite("Dashmips Debug Adapter", () => {
+suite('Dashmips Debug Adapter', () => {
     let dc: DebugClient;
 
     const DEBUG_ADAPTER = './out/debugAdapter.js';
@@ -15,7 +15,7 @@ suite("Dashmips Debug Adapter", () => {
     suite('basic', () => {
 		test('unknown request should produce error', done => {
 			dc.send('illegal_request').then(() => {
-				done(new Error("does not report error on unknown request"));
+				done(new Error('does not report error on unknown request'));
 			}).catch(() => {
 				done();
 			});

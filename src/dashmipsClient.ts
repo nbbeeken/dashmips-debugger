@@ -1,9 +1,9 @@
-import { connect, TcpNetConnectOpts } from "net";
-import { execSync, exec, ChildProcess } from "child_process";
-import { EventEmitter } from "events";
+import { connect, TcpNetConnectOpts } from 'net';
+import { execSync, exec, ChildProcess } from 'child_process';
+import { EventEmitter } from 'events';
 
 export const defaultConnectOpts: TcpNetConnectOpts = {
-    host: "localhost",
+    host: 'localhost',
     port: 9999,
     readable: true,
     writable: true,
@@ -31,7 +31,7 @@ export interface MipsProgram {
 }
 
 export interface DebugMessage {
-    command: "start" | "step" | "continue";
+    command: 'start' | 'step' | 'continue';
     program: MipsProgram;
     breakpoints?: number[];
     message?: string;
@@ -44,20 +44,20 @@ export async function sendMessage(
 ): Promise<DebugMessage> {
 
     const connection = connect(connectOpts);
-    connection.setEncoding("utf8");
+    connection.setEncoding('utf8');
 
-    let buffer = "";
-    connection.on("data", (data) => {
+    let buffer = '';
+    connection.on('data', (data) => {
         buffer += data;
     });
 
     return new Promise<DebugMessage>((resolve, reject) => {
-        connection.on("error", (err) => reject(err));
-        connection.on("timeout", () => reject(new Error("timeout")));
-        connection.on("connect", () => {
-            const msgasstring = JSON.stringify(message) + "\r\n\r\n";
+        connection.on('error', (err) => reject(err));
+        connection.on('timeout', () => reject(new Error('timeout')));
+        connection.on('connect', () => {
+            const msgasstring = JSON.stringify(message) + '\r\n\r\n';
             connection.write(msgasstring);
-            connection.on("end", () => {
+            connection.on('end', () => {
                 connection.destroy();
                 const resp = JSON.parse(buffer) as DebugMessage;
                 resolve(resp);
@@ -78,8 +78,8 @@ export function verifyBreakPoint(line: number, program: MipsProgram) {
 export function isDashmipsInstalled(): boolean {
     try {
         execSync(
-            "python -m dashmips -v",
-            { encoding: "utf8" }
+            'python -m dashmips -v',
+            { encoding: 'utf8' }
         );
         return true;
     } catch{
@@ -89,12 +89,12 @@ export function isDashmipsInstalled(): boolean {
 
 export function compileMips(filename: string): MipsProgram {
     if (!isDashmipsInstalled()) {
-        throw Error("Dashmips not installed");
+        throw Error('Dashmips not installed');
     }
 
     const stdout = execSync(
         `python -m dashmips compile ${filename} --json`,
-        { encoding: "utf8" }
+        { encoding: 'utf8' }
     );
 
     return JSON.parse(stdout.trim()) as MipsProgram;
@@ -103,8 +103,8 @@ export function compileMips(filename: string): MipsProgram {
 let server: ChildProcess | null = null;
 
 export function startServer(): ChildProcess {
-    server = exec("python -m dashmips debug");
-    server.on("exit", (code, signal) => { server = null; });
+    server = exec('python -m dashmips debug');
+    server.on('exit', (code, signal) => { server = null; });
     return server;
 }
 
@@ -215,7 +215,7 @@ export class DashmipsClient extends EventEmitter {
     public stack() {
         return [{
             index: 0,
-            name: "main",
+            name: 'main',
             file: this.currentLine.filename,
             line: this.currentLine.lineNumber
         }];

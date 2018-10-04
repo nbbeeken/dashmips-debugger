@@ -1,13 +1,13 @@
 import {
     LoggingDebugSession, InitializedEvent, logger, Logger,
     Breakpoint, StoppedEvent, Thread, Source, Scope, Handles, StackFrame
-} from "vscode-debugadapter";
+} from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { DashmipsClient } from "./dashmipsClient";
+import { DashmipsClient } from './dashmipsClient';
 
 import * as vscode from 'vscode';
-import { Subject } from "./Subject";
-import { basename, dirname } from "path";
+import { Subject } from './Subject';
+import { basename, dirname } from 'path';
 
 export function info(msg: string) {
     vscode.window.showInformationMessage(msg);
@@ -19,7 +19,8 @@ export function error(msg: string) {
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** An absolute path to the "program" to debug. */
     program: string;
-    /** Automatically stop target after launch. If not specified, target does not stop. */
+    /** Automatically stop target after launch.
+     * If not specified, target does not stop. */
     stopOnEntry?: boolean;
     /** enable logging the Debug Adapter Protocol */
     trace?: boolean;
@@ -34,7 +35,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private dashmipsPid: number;
 
     public constructor() {
-        super("");
+        super('');
 
         this.dashmipsClient = new DashmipsClient();
 
@@ -42,8 +43,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.sendEvent(new StoppedEvent('entry', 0));
         });
         this.dashmipsClient.on('stopOnStep', () => {
-			this.sendEvent(new StoppedEvent('step', 0));
-		});
+            this.sendEvent(new StoppedEvent('step', 0));
+        });
 
         this.setDebuggerLinesStartAt1(true);
         this.setDebuggerColumnsStartAt1(false);
@@ -75,7 +76,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         args: LaunchRequestArguments
     ) {
 
-        logger.setup(args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
+        logger.setup(
+            args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
 
         await this.configurationDone.wait(1000);
 
@@ -92,7 +94,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 this.dashmipsClient.start(args.program);
                 this.sendResponse(response);
             } else {
-                this.sendErrorResponse(response, {id: 1, format: "Can't start dashmips"});
+                this.sendErrorResponse(
+                    response, { id: 1, format: 'Cannot start dashmips' }
+                );
                 this.shutdown();
             }
         });
@@ -113,7 +117,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 this.convertDebuggerPathToClient(l.filename),
                 undefined, undefined, 'dashmips-adapter-data'
             );
-            return new Breakpoint(true, l.lineNumber, 0, src) as DebugProtocol.Breakpoint;
+            return new Breakpoint(
+                true, l.lineNumber, 0, src
+            ) as DebugProtocol.Breakpoint;
         });
 
         response.body = {
@@ -126,7 +132,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         response: DebugProtocol.ThreadsResponse
     ) {
         response.body = {
-            threads: [new Thread(0, "main")]
+            threads: [new Thread(0, 'main')]
         };
         this.sendResponse(response);
     }
@@ -159,8 +165,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         const scopes: Scope[] = [];
         scopes.push(new Scope(
-            "Registers",
-            this.variableHandles.create("register"),
+            'Registers',
+            this.variableHandles.create('register'),
             false
         ));
 
@@ -179,7 +185,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             const value = this.dashmipsClient.registers[regname];
             variables.push({
                 name: regname,
-                type: "integer",
+                type: 'integer',
                 value: value.toString(),
                 variablesReference: 0,
             } as DebugProtocol.Variable);
@@ -231,11 +237,12 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             }
         }
 
-		response.body = {
-			result: reply ? reply : `evaluate(context: '${args.context}', '${args.expression}')`,
-			variablesReference: 0
-		};
-		this.sendResponse(response);
+        response.body = {
+            result: reply ?
+                reply : `eval(ctx: '${args.context}', '${args.expression}')`,
+            variablesReference: 0
+        };
+        this.sendResponse(response);
     }
 
     protected disconnectRequest(

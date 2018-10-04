@@ -3,11 +3,12 @@
     "displayName": "dashmips-debugger",
     "description": "Debugs mips while executing in Dashmips interpreter",
     "version": "0.0.4",
+    "license": "MIT",
     "publisher": "roadkillco",
     "repository": {
-		"type": "git",
-		"url": "https://github.com/nbbeeken/dashmips-debugger.git"
-	},
+        "type": "git",
+        "url": "https://github.com/nbbeeken/dashmips-debugger.git"
+    },
     "icon": "images/dashmips-debugger-icon.png",
     "engines": {
         "vscode": "^1.27.0"

@@ -7,7 +7,7 @@ import {
 } from 'vscode';
 import { DashmipsDebugSession } from './dashmipsDebug';
 
-const EMBED_DEBUG_ADAPTER: "yes" | "no" | string = process.env.EMBED_DEBUG_ADAPTER || "yes";
+const EMBED_DEBUG_ADAPTER = true;
 
 export function activate(context: vscode.ExtensionContext) {
     const provider = new DashmipsConfigurationProvider();
@@ -19,7 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() { }
 
-export class DashmipsConfigurationProvider implements DebugConfigurationProvider {
+export class DashmipsConfigurationProvider
+    implements DebugConfigurationProvider {
 
     private server?: Net.Server;
 
@@ -41,20 +42,21 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
         }
 
         if (!config.program) {
-            return vscode.window.showInformationMessage("Cannot find a program to debug")
-                .then(_ => { return undefined; });
+            return vscode.window.showInformationMessage(
+                'Cannot find a program to debug'
+            ).then(_ => { return undefined; });
         }
 
-
-        if (!this.server) {
-            this.server = Net.createServer(socket => {
-                const session = new DashmipsDebugSession();
-                session.setRunAsServer(true);
-                session.start(socket as NodeJS.ReadableStream, socket);
-            }).listen(0);
+        if (EMBED_DEBUG_ADAPTER) {
+            if (!this.server) {
+                this.server = Net.createServer(socket => {
+                    const session = new DashmipsDebugSession();
+                    session.setRunAsServer(true);
+                    session.start(socket as NodeJS.ReadableStream, socket);
+                }).listen(0);
+            }
+            config.debugServer = this.server.address().port;
         }
-        config.debugServer = this.server.address().port;
-
         return config;
     }
     dispose() {
