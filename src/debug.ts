@@ -3,10 +3,10 @@ import {
     Breakpoint, StoppedEvent, Thread, Source, Scope, Handles, StackFrame
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { DashmipsClient } from './dashmipsClient';
+import { DashmipsClient } from './client';
 
 import * as vscode from 'vscode';
-import { Subject } from './Subject';
+import { Subject } from './subject';
 import { basename, dirname } from 'path';
 
 export function info(msg: string) {
@@ -26,7 +26,7 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     trace?: boolean;
 }
 
-export class DashmipsDebugSession extends LoggingDebugSession {
+export class DebugSession extends LoggingDebugSession {
 
 
     private configurationDone = new Subject();

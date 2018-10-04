@@ -1,6 +1,7 @@
 import { connect, TcpNetConnectOpts } from 'net';
 import { execSync, exec, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
+import { DebugMessage, MipsProgram } from './models';
 
 export const defaultConnectOpts: TcpNetConnectOpts = {
     host: 'localhost',
@@ -9,34 +10,6 @@ export const defaultConnectOpts: TcpNetConnectOpts = {
     writable: true,
     timeout: 3000,
 } as TcpNetConnectOpts;
-
-export interface SourceLine {
-    filename: string;
-    lineno: number;
-    line: string;
-}
-
-export interface Label {
-    type: string;
-    value: number;
-    name: string;
-}
-
-export interface MipsProgram {
-    name: string;
-    labels: { [name: string]: Label };
-    source: SourceLine[];
-    memory: string;
-    registers: { [regname: string]: number };
-}
-
-export interface DebugMessage {
-    command: 'start' | 'step' | 'continue';
-    program: MipsProgram;
-    breakpoints?: number[];
-    message?: string;
-    error?: boolean;
-}
 
 export async function sendMessage(
     message: DebugMessage,
@@ -122,6 +95,10 @@ interface SourceIdxToFileLine {
 
 export class DashmipsClient extends EventEmitter {
 
+    constructor() {
+        super();
+    }
+
     private mipsProgram: MipsProgram;
     private sourceLineBreakpoints: number[] = [];
 
@@ -157,7 +134,7 @@ export class DashmipsClient extends EventEmitter {
     }
 
     addBreakpoint(breakpoint: number, source: string): any {
-        if((!!this.mipsProgram) === false) {
+        if ((!!this.mipsProgram) === false) {
             return;
         }
         for (let idx = 0; idx < this.mipsProgram.source.length; idx++) {
@@ -169,10 +146,6 @@ export class DashmipsClient extends EventEmitter {
         }
     }
 
-    constructor() {
-        super();
-    }
-
     public start(filename: string) {
         this.mipsProgram = compileMips(filename);
         this.verifyBreakpoints();
@@ -180,7 +153,7 @@ export class DashmipsClient extends EventEmitter {
     }
 
     public async entry() {
-		const msg = await sendMessage({
+        const msg = await sendMessage({
             command: 'start',
             program: this.mipsProgram,
         });
@@ -198,9 +171,9 @@ export class DashmipsClient extends EventEmitter {
     }
 
     public verifyBreakpoints() {
-		if (this.mipsProgram) {
-			for(const bp of this.sourceLineBreakpoints) {
-				if (bp < this.mipsProgram.source.length) {
+        if (this.mipsProgram) {
+            for (const bp of this.sourceLineBreakpoints) {
+                if (bp < this.mipsProgram.source.length) {
                     const srcLine = this.mipsProgram.source[bp];
                     this.sendEvent('breakpointValidated', {
                         sourceIndex: bp,
@@ -208,8 +181,8 @@ export class DashmipsClient extends EventEmitter {
                         filename: srcLine.filename,
                     });
                 }
-			}
-		}
+            }
+        }
     }
 
     public stack() {
@@ -221,10 +194,10 @@ export class DashmipsClient extends EventEmitter {
         }];
     }
 
-    private sendEvent(event: string, ... args: any[]) {
-		setImmediate(_ => {
-			this.emit(event, ...args);
-		});
-	}
+    private sendEvent(event: string, ...args: any[]) {
+        setImmediate(_ => {
+            this.emit(event, ...args);
+        });
+    }
 
 }

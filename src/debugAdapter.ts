@@ -1,4 +1,3 @@
 
-import { DashmipsDebugSession } from './dashmipsDebug';
-
-DashmipsDebugSession.run(DashmipsDebugSession);
+import { DebugSession } from './debug';
+DebugSession.run(DebugSession);

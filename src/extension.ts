@@ -5,7 +5,7 @@ import {
     debug, DebugConfigurationProvider, WorkspaceFolder, DebugConfiguration,
     ProviderResult, CancellationToken
 } from 'vscode';
-import { DashmipsDebugSession } from './dashmipsDebug';
+import { DebugSession } from './debug';
 
 const EMBED_DEBUG_ADAPTER = true;
 
@@ -50,7 +50,7 @@ export class DashmipsConfigurationProvider
         if (EMBED_DEBUG_ADAPTER) {
             if (!this.server) {
                 this.server = Net.createServer(socket => {
-                    const session = new DashmipsDebugSession();
+                    const session = new DebugSession();
                     session.setRunAsServer(true);
                     session.start(socket as NodeJS.ReadableStream, socket);
                 }).listen(0);
