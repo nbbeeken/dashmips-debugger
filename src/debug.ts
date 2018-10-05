@@ -107,7 +107,7 @@ export class MipsDebugSession extends LoggingDebugSession {
     }
 
     protected async launchRequest(
-        launchRes: DebugProtocol.LaunchResponse,
+        response: DebugProtocol.LaunchResponse,
         args: LaunchRequestArguments
     ) {
 
@@ -116,32 +116,13 @@ export class MipsDebugSession extends LoggingDebugSession {
         );
 
         this.config = args;
-        const logArg = this.config.log ? '-l' : '';
-        await this.configurationDone.wait(1000);
 
-        const termArgs: DebugProtocol.RunInTerminalRequestArguments = {
-            kind: 'integrated',
-            title: 'Dashmips',
-            cwd: dirname(args.program),
-            args: `python -m dashmips debug ${logArg}`.split(' '),
-        };
-
-        this.runInTerminalRequest(termArgs, 5000, (termRes) => {
-            if (termRes.success) {
-                this.dashmipsPid = termRes.body.processId;
-                this.client = new Client(
-                    this.convertDebuggerPathToClient(args.program)
-                );
-                this.clientLaunched.notify();
-                this.setEventHandlers();
-                this.sendResponse(launchRes);
-            } else {
-                this.sendErrorResponse(
-                    termRes, { id: 1, format: 'Cannot start dashmips' }
-                );
-                this.shutdown();
-            }
-        });
+        this.client = new Client(
+            this.convertDebuggerPathToClient(args.program)
+        );
+        this.setEventHandlers();
+        this.clientLaunched.notify();
+        this.sendResponse(response);
     }
 
     protected async setBreakPointsRequest(

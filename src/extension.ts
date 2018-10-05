@@ -6,10 +6,25 @@ import {
     ProviderResult, CancellationToken
 } from 'vscode';
 import { MipsDebugSession } from './debug';
+import { isDashmipsInstalled } from './client';
 
 const EMBED_DEBUG_ADAPTER = false;
 
 export function activate(context: vscode.ExtensionContext) {
+
+    if (!isDashmipsInstalled()) {
+        vscode.window.showErrorMessage(
+            'Install Dashmips with pip?',
+            'Yes', 'No'
+        ).then((value) => {
+            if (value === 'Yes') {
+                const term = vscode.window.createTerminal('Install Dashmips');
+                term.show(true);
+                term.sendText('pip install dashmips', true);
+            }
+        });
+    }
+
     const provider = new DashmipsConfigurationProvider();
     context.subscriptions.push(
         debug.registerDebugConfigurationProvider('dashmips', provider)
@@ -23,12 +38,19 @@ export class DashmipsConfigurationProvider
     implements DebugConfigurationProvider {
 
     private server?: Net.Server;
+    private terminal?: vscode.Terminal;
 
     resolveDebugConfiguration(
         folder: WorkspaceFolder | undefined,
         config: DebugConfiguration,
         token?: CancellationToken
     ): ProviderResult<DebugConfiguration> {
+
+        const logArg = config.log ? '-l' : '';
+
+        this.terminal = vscode.window.createTerminal('Dashmips');
+        this.terminal.sendText(`python -m dashmips debug ${logArg}`, true);
+        this.terminal.show(false);
 
         if (!config.type && !config.request && !config.name) {
             const editor = vscode.window.activeTextEditor;
@@ -40,6 +62,9 @@ export class DashmipsConfigurationProvider
                 config.stopOnEntry = true;
             }
         }
+
+        // Debug console not at all useful yet.
+        config.internalConsoleOptions = 'neverOpen';
 
         if (!config.program) {
             return vscode.window.showInformationMessage(

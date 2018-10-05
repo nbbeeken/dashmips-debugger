@@ -2,7 +2,7 @@
     "name": "dashmips-debugger",
     "displayName": "dashmips-debugger",
     "description": "Debugs mips while executing in Dashmips interpreter",
-    "version": "0.0.5",
+    "version": "0.0.7",
     "license": "MIT",
     "publisher": "roadkillco",
     "repository": {
@@ -19,7 +19,7 @@
     "main": "./out/extension",
     "activationEvents": [
         "onDebug",
-        "onCommand:extention.dashmips.getProgramName"
+        "onLanguage:mips"
     ],
     "contributes": {
         "breakpoints": [
@@ -60,6 +60,12 @@
                                 "default": false
                             },
                             "registerFormat": {
+                                "enum": [
+                                    "hex",
+                                    "bin",
+                                    "oct",
+                                    "dec"
+                                ],
                                 "type": "string",
                                 "description": "Display registers in formats: 'hex' | 'oct' | 'dec' | 'bin'",
                                 "default": "hex"
@@ -95,7 +101,8 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "npm run compile",
+        "publish": "npx vsce publish",
+        "vscode:prepublish": "rm -rf ./out && npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
@@ -105,6 +112,7 @@
         "@types/mocha": "^2.2.42",
         "@types/node": "^8.10.25",
         "mocha": "^5.2.0",
+        "npx": "^10.2.0",
         "tslint": "^5.8.0",
         "typescript": "^2.6.1",
         "vsce": "^1.51.1",
