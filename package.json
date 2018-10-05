@@ -2,7 +2,7 @@
     "name": "dashmips-debugger",
     "displayName": "dashmips-debugger",
     "description": "Debugs mips while executing in Dashmips interpreter",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "license": "MIT",
     "publisher": "roadkillco",
     "repository": {
@@ -30,7 +30,7 @@
         "debuggers": [
             {
                 "type": "dashmips",
-                "label": "dashmips (Current File)",
+                "label": "Dashmips",
                 "program": "./out/debugAdapter.js",
                 "runtime": "node",
                 "configurationAttributes": {
@@ -53,6 +53,16 @@
                                 "type": "boolean",
                                 "description": "Enable logging of the Debug Adapter Protocol.",
                                 "default": true
+                            },
+                            "log": {
+                                "type": "boolean",
+                                "description": "Enable Dashmips logger",
+                                "default": false
+                            },
+                            "registerFormat": {
+                                "type": "string",
+                                "description": "Display registers in formats: 'hex' | 'oct' | 'dec' | 'bin'",
+                                "default": "hex"
                             }
                         }
                     }
@@ -63,7 +73,8 @@
                         "request": "launch",
                         "name": "dashmips (Current File)",
                         "program": "${file}",
-                        "stopOnEntry": true
+                        "stopOnEntry": true,
+                        "registerFormat": "hex"
                     }
                 ],
                 "configurationSnippets": [
@@ -75,7 +86,8 @@
                             "request": "launch",
                             "name": "Current File",
                             "program": "^\"\\${file}\"",
-                            "stopOnEntry": true
+                            "stopOnEntry": true,
+                            "registerFormat": "hex"
                         }
                     }
                 ]

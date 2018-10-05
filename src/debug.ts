@@ -1,13 +1,15 @@
 import {
     LoggingDebugSession, InitializedEvent, logger, Logger,
     Breakpoint, StoppedEvent, Thread,
-    Source, Scope, Handles, StackFrame, TerminatedEvent
+    Source, Scope, Handles, StackFrame, TerminatedEvent,
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
 
 import { Subject } from './subject';
 import { basename, dirname } from 'path';
 import { Client } from './client';
+import { DebugMessage } from './models';
+import { LogLevel } from 'vscode-debugadapter/lib/logger';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** An absolute path to the "program" to debug. */
@@ -17,18 +19,28 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     stopOnEntry?: boolean;
     /** enable logging the Debug Adapter Protocol */
     trace?: boolean;
+    /** Enable dashmips logger */
+    log?: boolean;
+    /** Enable dashmips logger */
+    registerFormat?: 'hex' | 'oct' | 'dec' | 'bin';
 }
 
-export class DebugSession extends LoggingDebugSession {
-
-
+export class MipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject();
     private client: Client;
     private variableHandles = new Handles<string>();
     private dashmipsPid: number;
+    private config: LaunchRequestArguments;
+    private clientLaunched = new Subject();
+
+    private set loggingEnabled(value: boolean) {
+        if (value) {
+            logger.setup(LogLevel.Verbose, true);
+        }
+    }
 
     public constructor() {
-        super('');
+        super();
         this.setDebuggerLinesStartAt1(true);
         this.setDebuggerColumnsStartAt1(false);
     }
@@ -41,7 +53,10 @@ export class DebugSession extends LoggingDebugSession {
         // 'step', 'breakpoint', 'exception', 'pause', 'entry', 'goto'
 
         this.client.on(
-            'start', () => this.sendEvent(new StoppedEvent('entry', 0))
+            'start', (msg: DebugMessage) => {
+                this.dashmipsPid = parseInt(msg.message);
+                this.sendEvent(new StoppedEvent('entry', 0));
+            }
         );
 
         this.client.on(
@@ -53,8 +68,15 @@ export class DebugSession extends LoggingDebugSession {
         );
 
         this.client.on(
+            'stop', () => {
+                process.kill(this.dashmipsPid, 'SIGTERM');
+                this.sendEvent(new TerminatedEvent());
+            }
+        );
+
+        this.client.on(
             'error', (err) => {
-                console.error(err);
+                logger.error(err);
                 this.sendEvent(new TerminatedEvent());
             }
         );
@@ -85,33 +107,37 @@ export class DebugSession extends LoggingDebugSession {
     }
 
     protected async launchRequest(
-        response: DebugProtocol.LaunchResponse,
+        launchRes: DebugProtocol.LaunchResponse,
         args: LaunchRequestArguments
     ) {
 
-        logger.setup(
-            args.trace ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false);
+        logger.setup(args.trace ?
+            Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false
+        );
 
+        this.config = args;
+        const logArg = this.config.log ? '-l' : '';
         await this.configurationDone.wait(1000);
 
         const termArgs: DebugProtocol.RunInTerminalRequestArguments = {
             kind: 'integrated',
             title: 'Dashmips',
             cwd: dirname(args.program),
-            args: `python -m dashmips debug -l`.split(' '),
+            args: `python -m dashmips debug ${logArg}`.split(' '),
         };
 
-        this.runInTerminalRequest(termArgs, 5000, (res) => {
-            if (res.success) {
-                this.dashmipsPid = res.body.processId;
+        this.runInTerminalRequest(termArgs, 5000, (termRes) => {
+            if (termRes.success) {
+                this.dashmipsPid = termRes.body.processId;
                 this.client = new Client(
                     this.convertDebuggerPathToClient(args.program)
                 );
+                this.clientLaunched.notify();
                 this.setEventHandlers();
-                this.sendResponse(response);
+                this.sendResponse(launchRes);
             } else {
                 this.sendErrorResponse(
-                    response, { id: 1, format: 'Cannot start dashmips' }
+                    termRes, { id: 1, format: 'Cannot start dashmips' }
                 );
                 this.shutdown();
             }
@@ -122,6 +148,7 @@ export class DebugSession extends LoggingDebugSession {
         response: DebugProtocol.SetBreakpointsResponse,
         args: DebugProtocol.SetBreakpointsArguments
     ) {
+        await this.clientLaunched.wait(2000);
 
         this.client.breakpointsFromVscode(args.source.path, args.breakpoints);
 
@@ -196,7 +223,7 @@ export class DebugSession extends LoggingDebugSession {
             variables.push({
                 name: regname,
                 type: 'integer',
-                value: value.toString(),
+                value: this.formatRegister(value),
                 variablesReference: 0,
             } as DebugProtocol.Variable);
         }
@@ -205,6 +232,20 @@ export class DebugSession extends LoggingDebugSession {
             variables
         };
         this.sendResponse(response);
+    }
+
+    formatRegister(value: number): string {
+        switch (this.config.registerFormat) {
+            case 'hex':
+                return '0x' + value.toString(16).padStart(8, '0');
+            case 'oct':
+                return '0o' + value.toString(8).padStart(11, '0');
+            case 'bin':
+                return '0b' + value.toString(2).padStart(32, '0');
+            case 'dec':
+            default:
+                return value.toString(10).padStart(10, '0');
+        }
     }
 
     protected async continueRequest(
@@ -265,6 +306,17 @@ export class DebugSession extends LoggingDebugSession {
         this.client.stop();
         process.kill(this.dashmipsPid, 'SIGTERM');
         this.shutdown();
+    }
+
+    static processError = (err: Error) => {
+        logger.error(`Exception: ${err && err.message ? err.message : ''}`);
+        logger.error(err && err.name ? err.name : '');
+        logger.error(err && err.stack ? err.stack : '');
+        // Catch all, incase we have string exceptions being raised.
+        logger.error(err ? err.toString() : '');
+        // Wait for 1 second before we die,
+        // we need to ensure errors are written to the log file.
+        setTimeout(() => process.exit(-1), 100);
     }
 
 }

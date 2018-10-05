@@ -17,7 +17,7 @@ export class Client extends EventEmitter {
     public program: MipsProgram;
     public pathToMain: string;
     private socket: Socket;
-    private breakpoints: Set<number>;
+    private breakpoints: Set<number>;  // These are indexes into program.source
     private buffer = '';
 
     get vscodeBreakPoints(): SourceLine[] {
@@ -121,6 +121,7 @@ export class Client extends EventEmitter {
     private send(message: DebugMessage | any) {
         const messageFull = {
             program: this.program,
+            breakpoints: [...this.breakpoints],
             ...message,
         };
         const msgTxt = JSON.stringify(messageFull) + '\n';
@@ -142,7 +143,7 @@ export class Client extends EventEmitter {
         if (message.error) {
             this.emit('error', message);
         } else {
-            this.emit(message.command);
+            this.emit(message.command, message);
         }
     }
 }
