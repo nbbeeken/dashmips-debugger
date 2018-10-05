@@ -1,20 +1,13 @@
 import {
     LoggingDebugSession, InitializedEvent, logger, Logger,
-    Breakpoint, StoppedEvent, Thread, Source, Scope, Handles, StackFrame
+    Breakpoint, StoppedEvent, Thread,
+    Source, Scope, Handles, StackFrame, TerminatedEvent
 } from 'vscode-debugadapter';
 import { DebugProtocol } from 'vscode-debugprotocol';
-import { DashmipsClient } from './client';
 
-import * as vscode from 'vscode';
 import { Subject } from './subject';
 import { basename, dirname } from 'path';
-
-export function info(msg: string) {
-    vscode.window.showInformationMessage(msg);
-}
-export function error(msg: string) {
-    vscode.window.showErrorMessage(msg);
-}
+import { Client } from './client';
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** An absolute path to the "program" to debug. */
@@ -30,24 +23,44 @@ export class DebugSession extends LoggingDebugSession {
 
 
     private configurationDone = new Subject();
-    private dashmipsClient: DashmipsClient;
+    private client: Client;
     private variableHandles = new Handles<string>();
     private dashmipsPid: number;
 
     public constructor() {
         super('');
-
-        this.dashmipsClient = new DashmipsClient();
-
-        this.dashmipsClient.on('stopOnEntry', () => {
-            this.sendEvent(new StoppedEvent('entry', 0));
-        });
-        this.dashmipsClient.on('stopOnStep', () => {
-            this.sendEvent(new StoppedEvent('step', 0));
-        });
-
         this.setDebuggerLinesStartAt1(true);
         this.setDebuggerColumnsStartAt1(false);
+    }
+
+    private setEventHandlers() {
+        if (!this.client) {
+            return;
+        }
+
+        // 'step', 'breakpoint', 'exception', 'pause', 'entry', 'goto'
+
+        this.client.on(
+            'start', () => this.sendEvent(new StoppedEvent('entry', 0))
+        );
+
+        this.client.on(
+            'step', () => this.sendEvent(new StoppedEvent('step', 0))
+        );
+
+        this.client.on(
+            'continue', () => this.sendEvent(new StoppedEvent('breakpoint', 0))
+        );
+
+        this.client.on(
+            'error', (err) => {
+                console.error(err);
+                this.sendEvent(new TerminatedEvent());
+            }
+        );
+        this.client.on(
+            'end', () => this.sendEvent(new TerminatedEvent())
+        );
     }
 
     protected async initializeRequest(
@@ -83,15 +96,18 @@ export class DebugSession extends LoggingDebugSession {
 
         const termArgs: DebugProtocol.RunInTerminalRequestArguments = {
             kind: 'integrated',
-            title: 'Dashmips Console',
+            title: 'Dashmips',
             cwd: dirname(args.program),
-            args: `python -m dashmips debug`.split(' '),
+            args: `python -m dashmips debug -l`.split(' '),
         };
 
         this.runInTerminalRequest(termArgs, 5000, (res) => {
             if (res.success) {
                 this.dashmipsPid = res.body.processId;
-                this.dashmipsClient.start(args.program);
+                this.client = new Client(
+                    this.convertDebuggerPathToClient(args.program)
+                );
+                this.setEventHandlers();
                 this.sendResponse(response);
             } else {
                 this.sendErrorResponse(
@@ -107,20 +123,16 @@ export class DebugSession extends LoggingDebugSession {
         args: DebugProtocol.SetBreakpointsArguments
     ) {
 
-        for (const bp of args.breakpoints) {
-            this.dashmipsClient.addBreakpoint(bp.line, args.source.path);
-        }
+        this.client.breakpointsFromVscode(args.source.path, args.breakpoints);
 
-        const breakpoints = this.dashmipsClient.breakpoints.map(l => {
+        const breakpoints = this.client.vscodeBreakPoints.map(l => {
             const src = new Source(
                 basename(l.filename),
                 this.convertDebuggerPathToClient(l.filename),
-                undefined, undefined, 'dashmips-adapter-data'
+                undefined, undefined, 'dashmips'
             );
-            return new Breakpoint(
-                true, l.lineNumber, 0, src
-            ) as DebugProtocol.Breakpoint;
-        });
+            return new Breakpoint(true, l.lineno, 0, src);
+        }) as DebugProtocol.Breakpoint[];
 
         response.body = {
             breakpoints
@@ -141,10 +153,8 @@ export class DebugSession extends LoggingDebugSession {
         response: DebugProtocol.StackTraceResponse,
         args: DebugProtocol.StackTraceArguments
     ) {
-        const stack = this.dashmipsClient.stack();
-
         response.body = {
-            stackFrames: stack.map(f => {
+            stackFrames: this.client.stack.map(f => {
                 return new StackFrame(f.index, f.name,
                     new Source(
                         basename(f.file),
@@ -153,7 +163,7 @@ export class DebugSession extends LoggingDebugSession {
                     f.line
                 );
             }),
-            totalFrames: stack.length,
+            totalFrames: this.client.stack.length,
         };
         this.sendResponse(response);
     }
@@ -179,10 +189,10 @@ export class DebugSession extends LoggingDebugSession {
         args: DebugProtocol.VariablesArguments
     ) {
         const variables: DebugProtocol.Variable[] = [];
-        const id = this.variableHandles.get(args.variablesReference);
+        // const id = this.variableHandles.get(args.variablesReference);
 
-        for (const regname in this.dashmipsClient.registers) {
-            const value = this.dashmipsClient.registers[regname];
+        for (const regname in this.client.program.registers) {
+            const value = this.client.program.registers[regname];
             variables.push({
                 name: regname,
                 type: 'integer',
@@ -200,7 +210,10 @@ export class DebugSession extends LoggingDebugSession {
     protected async continueRequest(
         response: DebugProtocol.ContinueResponse,
         args: DebugProtocol.ContinueArguments
-    ) { }
+    ) {
+        this.client.continue();
+        this.sendResponse(response);
+    }
 
     protected async reverseContinueRequest(
         response: DebugProtocol.ReverseContinueResponse,
@@ -211,7 +224,7 @@ export class DebugSession extends LoggingDebugSession {
         response: DebugProtocol.NextResponse,
         args: DebugProtocol.NextArguments
     ) {
-        await this.dashmipsClient.step();
+        this.client.step();
         this.sendResponse(response);
     }
 
@@ -227,12 +240,12 @@ export class DebugSession extends LoggingDebugSession {
 
         let reply = undefined;
         if (args.context === 'hover') {
-            if (this.dashmipsClient.registers.hasOwnProperty(args.expression)) {
-                const regvalue = this.dashmipsClient.registers[args.expression];
+            if (this.client.program.registers.hasOwnProperty(args.expression)) {
+                const regvalue = this.client.program.registers[args.expression];
                 reply = regvalue.toString();
             }
-            if (this.dashmipsClient.labels.hasOwnProperty(args.expression)) {
-                const label = this.dashmipsClient.labels[args.expression];
+            if (this.client.program.labels.hasOwnProperty(args.expression)) {
+                const label = this.client.program.labels[args.expression];
                 reply = `${label.value}`;
             }
         }
@@ -249,6 +262,7 @@ export class DebugSession extends LoggingDebugSession {
         response: DebugProtocol.DisconnectResponse,
         args: DebugProtocol.DisconnectArguments
     ) {
+        this.client.stop();
         process.kill(this.dashmipsPid, 'SIGTERM');
         this.shutdown();
     }

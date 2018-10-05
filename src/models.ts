@@ -19,7 +19,7 @@ export interface MipsProgram {
 }
 
 export interface DebugMessage {
-    command: 'start' | 'step' | 'continue';
+    command: 'start' | 'step' | 'continue' | 'stop';
     program: MipsProgram;
     breakpoints?: number[];
     message?: string;

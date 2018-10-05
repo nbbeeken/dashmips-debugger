@@ -1,62 +1,149 @@
-import { connect, TcpNetConnectOpts } from 'net';
-import { execSync, exec, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
-import { DebugMessage, MipsProgram } from './models';
+import { Socket, TcpNetConnectOpts, connect } from 'net';
+import { MipsProgram, DebugMessage, SourceLine } from './models';
+import { execSync } from 'child_process';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { basename } from 'path';
 
-export const defaultConnectOpts: TcpNetConnectOpts = {
+const connOpts: TcpNetConnectOpts = {
     host: 'localhost',
     port: 9999,
     readable: true,
     writable: true,
-    timeout: 3000,
 } as TcpNetConnectOpts;
 
-export async function sendMessage(
-    message: DebugMessage,
-    connectOpts = defaultConnectOpts,
-): Promise<DebugMessage> {
 
-    const connection = connect(connectOpts);
-    connection.setEncoding('utf8');
+export class Client extends EventEmitter {
+    public program: MipsProgram;
+    public pathToMain: string;
+    private socket: Socket;
+    private breakpoints: Set<number>;
+    private buffer = '';
 
-    let buffer = '';
-    connection.on('data', (data) => {
-        buffer += data;
-    });
+    get vscodeBreakPoints(): SourceLine[] {
+        const list: SourceLine[] = [];
+        if(!(!!this.program)) {
+            return list;
+        }
+        for (const srcLineBp of this.breakpoints) {
+            const srcLine = this.program.source[srcLineBp];
+            list.push(srcLine);
+        }
+        return list;
+    }
 
-    return new Promise<DebugMessage>((resolve, reject) => {
-        connection.on('error', (err) => reject(err));
-        connection.on('timeout', () => reject(new Error('timeout')));
-        connection.on('connect', () => {
-            const msgasstring = JSON.stringify(message) + '\r\n\r\n';
-            connection.write(msgasstring);
-            connection.on('end', () => {
-                connection.destroy();
-                const resp = JSON.parse(buffer) as DebugMessage;
-                resolve(resp);
-            });
-        });
-    });
-}
-
-export function verifyBreakPoint(line: number, program: MipsProgram) {
-    for (let i = 0; i < program.source.length; i++) {
-        if (line === program.source[i].lineno) {
-            return i;
+    public breakpointsFromVscode(
+        path: string,
+        breakpoints: DebugProtocol.SourceBreakpoint[]
+    ) {
+        if ((!!this.program) === false) {
+            return;
+        }
+        for (const vsbp of breakpoints) {
+            for (let idx = 0; idx < this.program.source.length; idx++) {
+                const srcline = this.program.source[idx];
+                // srcline.filename === source NEEDS TO BE CHECKED
+                if (vsbp.line === srcline.lineno && true) {
+                    this.breakpoints.add(idx);
+                }
+            }
         }
     }
-    return -1;
-}
 
-export function isDashmipsInstalled(): boolean {
-    try {
-        execSync(
-            'python -m dashmips -v',
-            { encoding: 'utf8' }
-        );
-        return true;
-    } catch{
-        return false;
+    get currentLn() {
+        return this.program.source[this.program.registers.pc];
+    }
+
+    get stack() {
+        return [{
+            index: 0,
+            name: 'main',
+            file: this.currentLn.filename,
+            line: this.currentLn.lineno
+        }];
+    }
+
+    public step() {
+        const cur = this.currentLn;
+        this.send({
+            command: 'step',
+            message: `Stepping from ${basename(cur.filename)}:${cur.lineno}`,
+        });
+    }
+
+    public continue() {
+        const cur = this.currentLn;
+        this.send({
+            command: 'continue',
+            message: `Continue from ${basename(cur.filename)}:${cur.lineno}`,
+        });
+    }
+
+    public stop() {
+        const cur = this.currentLn;
+        this.send({
+            command: 'stop',
+            message: `Stopping on ${basename(cur.filename)}:${cur.lineno}`,
+        });
+    }
+
+    constructor(program: string, sockOpts?: TcpNetConnectOpts) {
+        super();
+
+        this.program = compileMips(program);
+        this.pathToMain = program;
+
+        this.breakpoints = new Set<number>();
+
+        const opts = {
+            ...connOpts,
+            ...sockOpts,
+        };
+        this.socket = connect(opts);
+        this.socket.setEncoding('utf8');
+
+        this.socket.once('connect', this.onConnect);
+        this.socket.once('error', (err) => this.emit('error', err));
+        this.socket.once('end', () => this.emit('end'));
+
+        this.socket.on('data', (data) => {
+            this.buffer += data;
+            if (this.buffer.endsWith('\n')) {
+                const msg = JSON.parse(this.buffer.trim());
+                this.buffer = '';
+                this.emit('message', msg);
+            }
+        });
+
+        this.on('message', this.onMessage);
+    }
+
+    private send(message: DebugMessage | any) {
+        const messageFull = {
+            program: this.program,
+            ...message,
+        };
+        const msgTxt = JSON.stringify(messageFull) + '\n';
+        return this.socket.write(msgTxt);
+    }
+
+    private onConnect = () => {
+        const message: DebugMessage = {
+            command: 'start',
+            program: this.program,
+            message: 'init'
+        };
+        this.send(message);
+    }
+
+    private onMessage = (message: DebugMessage) => {
+        this.program = message.program;
+        message.breakpoints.map(bp => this.breakpoints.add(bp));
+        if (message.error) {
+            this.emit('error', message);
+        } else {
+            this.emit(message.command);
+        }
     }
 }
 
@@ -73,131 +160,13 @@ export function compileMips(filename: string): MipsProgram {
     return JSON.parse(stdout.trim()) as MipsProgram;
 }
 
-let server: ChildProcess | null = null;
-
-export function startServer(): ChildProcess {
-    server = exec('python -m dashmips debug');
-    server.on('exit', (code, signal) => { server = null; });
-    return server;
-}
-
-export function stopServer() {
-    if (!!server) {
-        server.kill();
+export function isDashmipsInstalled(): boolean {
+    try {
+        execSync(
+            'python -m dashmips -v', { encoding: 'utf8' }
+        );
+        return true;
+    } catch {
+        return false;
     }
-}
-
-interface SourceIdxToFileLine {
-    sourceIndex: number;
-    lineNumber: number;
-    filename: string;
-}
-
-export class DashmipsClient extends EventEmitter {
-
-    constructor() {
-        super();
-    }
-
-    private mipsProgram: MipsProgram;
-    private sourceLineBreakpoints: number[] = [];
-
-    get registers() {
-        return this.mipsProgram.registers;
-    }
-
-    get labels() {
-        return this.mipsProgram.labels;
-    }
-
-    get breakpoints(): SourceIdxToFileLine[] {
-        const list = [];
-        for (const srcLineBp of this.sourceLineBreakpoints) {
-            const srcLine = this.mipsProgram.source[srcLineBp];
-            list.push({
-                sourceIndex: srcLineBp,
-                lineNumber: srcLine.lineno,
-                filename: srcLine.filename,
-            });
-        }
-        return list;
-    }
-
-    get currentLine(): SourceIdxToFileLine {
-        const srcIdx = this.mipsProgram.registers['pc'];
-        const srcline = this.mipsProgram.source[srcIdx];
-        return {
-            sourceIndex: srcIdx,
-            lineNumber: srcline.lineno,
-            filename: srcline.filename,
-        };
-    }
-
-    addBreakpoint(breakpoint: number, source: string): any {
-        if ((!!this.mipsProgram) === false) {
-            return;
-        }
-        for (let idx = 0; idx < this.mipsProgram.source.length; idx++) {
-            const srcline = this.mipsProgram.source[idx];
-            // srcline.filename === source NEEDS TO BE CHECKED
-            if (breakpoint === srcline.lineno && true) {
-                this.sourceLineBreakpoints.push(idx);
-            }
-        }
-    }
-
-    public start(filename: string) {
-        this.mipsProgram = compileMips(filename);
-        this.verifyBreakpoints();
-        this.entry();
-    }
-
-    public async entry() {
-        const msg = await sendMessage({
-            command: 'start',
-            program: this.mipsProgram,
-        });
-        this.mipsProgram = msg.program;
-        this.sendEvent('stopOnEntry');
-    }
-
-    public async step() {
-        const msg = await sendMessage({
-            command: 'step',
-            program: this.mipsProgram,
-        });
-        this.mipsProgram = msg.program;
-        this.sendEvent('stopOnStep');
-    }
-
-    public verifyBreakpoints() {
-        if (this.mipsProgram) {
-            for (const bp of this.sourceLineBreakpoints) {
-                if (bp < this.mipsProgram.source.length) {
-                    const srcLine = this.mipsProgram.source[bp];
-                    this.sendEvent('breakpointValidated', {
-                        sourceIndex: bp,
-                        lineNumber: srcLine.lineno,
-                        filename: srcLine.filename,
-                    });
-                }
-            }
-        }
-    }
-
-    public stack() {
-        return [{
-            index: 0,
-            name: 'main',
-            file: this.currentLine.filename,
-            line: this.currentLine.lineNumber
-        }];
-    }
-
-    private sendEvent(event: string, ...args: any[]) {
-        setImmediate(_ => {
-            this.emit(event, ...args);
-        });
-    }
-
 }
