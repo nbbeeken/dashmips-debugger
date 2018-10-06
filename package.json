@@ -22,6 +22,31 @@
         "onLanguage:mips"
     ],
     "contributes": {
+        "languages": [
+            {
+                "id": "mips",
+				"aliases": [
+					"MIPS Assembly",
+                    "mips",
+                    "dashmips"
+				],
+				"extensions": [".mips", ".dmips"],
+				"configuration": "./language/mips-language-configuration.json"
+            }
+        ],
+        "grammars": [
+			{
+				"language": "mips",
+				"scopeName": "mips",
+				"path": "./language/mips.tmLanguage"
+			}
+		],
+        "snippets": [
+            {
+                "language": "mips",
+                "path": "./language/mips-snippets.json"
+            }
+        ],
         "breakpoints": [
             {
                 "language": "mips"

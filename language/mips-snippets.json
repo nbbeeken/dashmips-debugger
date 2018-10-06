@@ -1,0 +1,8 @@
+{
+    "add": {
+        "prefix":"add",
+        "body": "add \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+		"description": "add rs and rt and store in rd",
+		"scope": "mips"
+    }
+}
