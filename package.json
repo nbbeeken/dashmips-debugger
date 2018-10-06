@@ -2,7 +2,7 @@
     "name": "dashmips-debugger",
     "displayName": "dashmips-debugger",
     "description": "Debugs mips while executing in Dashmips interpreter",
-    "version": "0.0.7",
+    "version": "0.0.8",
     "license": "MIT",
     "publisher": "roadkillco",
     "repository": {
@@ -25,22 +25,25 @@
         "languages": [
             {
                 "id": "mips",
-				"aliases": [
-					"MIPS",
-                    "mips",
-                    "dashmips"
-				],
-				"extensions": [".mips", ".dmips"],
-				"configuration": "./language/mips-language-configuration.json"
+                "aliases": [
+                    "MIPS",
+                    "dashmips",
+                    "mips"
+                ],
+                "extensions": [
+                    ".mips",
+                    ".dmips"
+                ],
+                "configuration": "./language/mips-language-configuration.json"
             }
         ],
         "grammars": [
-			{
-				"language": "mips",
-				"scopeName": "source.mips",
+            {
+                "language": "mips",
+                "scopeName": "source.mips",
                 "path": "./language/mips.tmLanguage.json"
-			}
-		],
+            }
+        ],
         "snippets": [
             {
                 "language": "mips",

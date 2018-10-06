@@ -1,8 +1,428 @@
 {
     "add": {
-        "prefix":"add",
+        "prefix": "add",
         "body": "add \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
-		"description": "add rs and rt and store in rd",
-		"scope": "mips"
+        "description": "Add Reg[rd]=Reg[rs]+Reg[rt].",
+        "scope": "mips"
+    },
+    "addi": {
+        "prefix": "addi",
+        "body": "addi ",
+        "description": "",
+        "scope": "mips"
+    },
+    "addiu": {
+        "prefix": "addiu",
+        "body": "addiu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "addu": {
+        "prefix": "addu",
+        "body": "addu ",
+        "description": "Add unsigned Reg[rd]=Reg[rs]+Reg[rt].",
+        "scope": "mips"
+    },
+    "and": {
+        "prefix": "and",
+        "body": "and ",
+        "description": "",
+        "scope": "mips"
+    },
+    "andi": {
+        "prefix": "andi",
+        "body": "andi ",
+        "description": "",
+        "scope": "mips"
+    },
+    "beq": {
+        "prefix": "beq",
+        "body": "beq ",
+        "description": "Branch to address if Reg[rs] equals Reg[rt].",
+        "scope": "mips"
+    },
+    "bgez": {
+        "prefix": "bgez",
+        "body": "bgez ",
+        "description": "",
+        "scope": "mips"
+    },
+    "bgezal": {
+        "prefix": "bgezal",
+        "body": "bgezal ",
+        "description": "",
+        "scope": "mips"
+    },
+    "bgtz": {
+        "prefix": "bgtz",
+        "body": "bgtz ",
+        "description": "",
+        "scope": "mips"
+    },
+    "blez": {
+        "prefix": "blez",
+        "body": "blez ",
+        "description": "",
+        "scope": "mips"
+    },
+    "bltz": {
+        "prefix": "bltz",
+        "body": "bltz ",
+        "description": "",
+        "scope": "mips"
+    },
+    "bltzal": {
+        "prefix": "bltzal",
+        "body": "bltzal ",
+        "description": "",
+        "scope": "mips"
+    },
+    "bne": {
+        "prefix": "bne",
+        "body": "bne ",
+        "description": "",
+        "scope": "mips"
+    },
+    "clo": {
+        "prefix": "clo",
+        "body": "clo ",
+        "description": "",
+        "scope": "mips"
+    },
+    "clz": {
+        "prefix": "clz",
+        "body": "clz ",
+        "description": "",
+        "scope": "mips"
+    },
+    "div": {
+        "prefix": "div",
+        "body": "div ",
+        "description": "",
+        "scope": "mips"
+    },
+    "divu": {
+        "prefix": "divu",
+        "body": "divu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "j": {
+        "prefix": "j",
+        "body": "j ",
+        "description": "Jump unconditionally to label.",
+        "scope": "mips"
+    },
+    "jal": {
+        "prefix": "jal",
+        "body": "jal ",
+        "description": "Jump unconditionally to label and set $ra to current $pc.",
+        "scope": "mips"
+    },
+    "jalr": {
+        "prefix": "jalr",
+        "body": "jalr ",
+        "description": "",
+        "scope": "mips"
+    },
+    "jr": {
+        "prefix": "jr",
+        "body": "jr ",
+        "description": "",
+        "scope": "mips"
+    },
+    "la": {
+        "prefix": "la",
+        "body": "la ",
+        "description": "Load address.",
+        "scope": "mips"
+    },
+    "lb": {
+        "prefix": "lb",
+        "body": "lb ",
+        "description": "",
+        "scope": "mips"
+    },
+    "lbu": {
+        "prefix": "lbu",
+        "body": "lbu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "lh": {
+        "prefix": "lh",
+        "body": "lh ",
+        "description": "",
+        "scope": "mips"
+    },
+    "lhu": {
+        "prefix": "lhu",
+        "body": "lhu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "li": {
+        "prefix": "li",
+        "body": "li ",
+        "description": "Load address.",
+        "scope": "mips"
+    },
+    "lui": {
+        "prefix": "lui",
+        "body": "lui ",
+        "description": "Load upper immediate, NOT LOAD FROM MEMORY.",
+        "scope": "mips"
+    },
+    "lw": {
+        "prefix": "lw",
+        "body": "lw ",
+        "description": "",
+        "scope": "mips"
+    },
+    "lwl": {
+        "prefix": "lwl",
+        "body": "lwl ",
+        "description": "",
+        "scope": "mips"
+    },
+    "lwr": {
+        "prefix": "lwr",
+        "body": "lwr ",
+        "description": "",
+        "scope": "mips"
+    },
+    "madd": {
+        "prefix": "madd",
+        "body": "madd ",
+        "description": "",
+        "scope": "mips"
+    },
+    "maddu": {
+        "prefix": "maddu",
+        "body": "maddu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "mfhi": {
+        "prefix": "mfhi",
+        "body": "mfhi ",
+        "description": "",
+        "scope": "mips"
+    },
+    "mflo": {
+        "prefix": "mflo",
+        "body": "mflo ",
+        "description": "",
+        "scope": "mips"
+    },
+    "move": {
+        "prefix": "move",
+        "body": "move ",
+        "description": "Overwrite rd with rs.",
+        "scope": "mips"
+    },
+    "movn": {
+        "prefix": "movn",
+        "body": "movn ",
+        "description": "",
+        "scope": "mips"
+    },
+    "movz": {
+        "prefix": "movz",
+        "body": "movz ",
+        "description": "",
+        "scope": "mips"
+    },
+    "msub": {
+        "prefix": "msub",
+        "body": "msub ",
+        "description": "",
+        "scope": "mips"
+    },
+    "msubu": {
+        "prefix": "msubu",
+        "body": "msubu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "mthi": {
+        "prefix": "mthi",
+        "body": "mthi ",
+        "description": "",
+        "scope": "mips"
+    },
+    "mtlo": {
+        "prefix": "mtlo",
+        "body": "mtlo ",
+        "description": "",
+        "scope": "mips"
+    },
+    "mul": {
+        "prefix": "mul",
+        "body": "mul ",
+        "description": "",
+        "scope": "mips"
+    },
+    "mult": {
+        "prefix": "mult",
+        "body": "mult ",
+        "description": "",
+        "scope": "mips"
+    },
+    "multu": {
+        "prefix": "multu",
+        "body": "multu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "nop": {
+        "prefix": "nop",
+        "body": "nop ",
+        "description": "Do nothing.",
+        "scope": "mips"
+    },
+    "nor": {
+        "prefix": "nor",
+        "body": "nor ",
+        "description": "",
+        "scope": "mips"
+    },
+    "or": {
+        "prefix": "or",
+        "body": "or ",
+        "description": "",
+        "scope": "mips"
+    },
+    "ori": {
+        "prefix": "ori",
+        "body": "ori ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sb": {
+        "prefix": "sb",
+        "body": "sb ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sc": {
+        "prefix": "sc",
+        "body": "sc ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sh": {
+        "prefix": "sh",
+        "body": "sh ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sll": {
+        "prefix": "sll",
+        "body": "sll ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sllv": {
+        "prefix": "sllv",
+        "body": "sllv ",
+        "description": "",
+        "scope": "mips"
+    },
+    "slt": {
+        "prefix": "slt",
+        "body": "slt ",
+        "description": "",
+        "scope": "mips"
+    },
+    "slti": {
+        "prefix": "slti",
+        "body": "slti ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sltiu": {
+        "prefix": "sltiu",
+        "body": "sltiu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sltu": {
+        "prefix": "sltu",
+        "body": "sltu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sra": {
+        "prefix": "sra",
+        "body": "sra ",
+        "description": "",
+        "scope": "mips"
+    },
+    "srav": {
+        "prefix": "srav",
+        "body": "srav ",
+        "description": "",
+        "scope": "mips"
+    },
+    "srl": {
+        "prefix": "srl",
+        "body": "srl ",
+        "description": "",
+        "scope": "mips"
+    },
+    "srlv": {
+        "prefix": "srlv",
+        "body": "srlv ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sub": {
+        "prefix": "sub",
+        "body": "sub ",
+        "description": "",
+        "scope": "mips"
+    },
+    "subu": {
+        "prefix": "subu",
+        "body": "subu ",
+        "description": "",
+        "scope": "mips"
+    },
+    "sw": {
+        "prefix": "sw",
+        "body": "sw ",
+        "description": "",
+        "scope": "mips"
+    },
+    "swl": {
+        "prefix": "swl",
+        "body": "swl ",
+        "description": "",
+        "scope": "mips"
+    },
+    "swr": {
+        "prefix": "swr",
+        "body": "swr ",
+        "description": "",
+        "scope": "mips"
+    },
+    "syscall": {
+        "prefix": "syscall",
+        "body": "syscall ",
+        "description": "Call syscall specified in $v0.",
+        "scope": "mips"
+    },
+    "xor": {
+        "prefix": "xor",
+        "body": "xor ",
+        "description": "",
+        "scope": "mips"
+    },
+    "xori": {
+        "prefix": "xori",
+        "body": "xori ",
+        "description": "",
+        "scope": "mips"
     }
 }

@@ -16,6 +16,13 @@
 			"include": "#punctuation"
 		},
 		{
+			"name": "string.quoted.double.mips",
+			"begin": "\"",
+			"patterns": [{"match": ".", "name": "string.ssraw"}],
+			"end": "\"",
+			"comment": "Strings"
+		},
+		{
 			"name": "storage.type.mips",
 			"match": "\\.\\b(align|ascii|asciiz|byte|extern|globl|space|word)\\b",
 			"comment": "Assembler directives for data storage"
@@ -47,7 +54,7 @@
 		},
 		{
 			"name": "entity.name.tag.mips",
-			"match": "\\b[\\w]+\\b",
+			"match": "\\b[\\w]+\\b:",
 			"comment": "Labels"
 		}
 	],
@@ -150,4 +157,5 @@
 				}
 			}
 		}
+	}
 }
