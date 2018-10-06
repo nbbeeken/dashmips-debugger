@@ -1,0 +1,153 @@
+{
+	"name": "Mips",
+	"scopeName": "source.mips",
+	"fileTypes": [
+		"dmips",
+		"mips"
+	],
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#number"
+		},
+		{
+			"include": "#punctuation"
+		},
+		{
+			"name": "storage.type.mips",
+			"match": "\\.\\b(align|ascii|asciiz|byte|extern|globl|space|word)\\b",
+			"comment": "Assembler directives for data storage"
+		},
+		{
+			"name": "entity.name.section.mips",
+			"match": "\\.\\b(data|text|kdata|ktext|)\\b",
+			"comment": "Segements"
+		},
+		{
+			"name": "variable.parameter.mips",
+			"match": "\\$(((3[01])|([12]?[0-9])|[0-9])|zero|at|v[01]|a[0-3]|s[0-7]|t[0-9]|k[01]|gp|sp|fp|ra)",
+			"comment": "Registers by id"
+		},
+		{
+			"name": "support.function.source.mips",
+			"match": "\\b(add|addu|addi|addiu|sub|subu|and|andi|or|not|ori|nor|xor|xori|slt|sltu|slti|sltiu|sll|sllv|rol|srl|sra|srlv|ror|j|jr|jal|beq|bne|lw|sw|lui|move|mfhi|mflo|mthi|mtlo)\\b",
+			"comment": "Instructions provided by the MIPS assembly language"
+		},
+		{
+			"name": "support.function.other.mips",
+			"match": "\\b(abs|b|beqz|bge|bgt|bgtu|ble|bleu|blt|bltu|bnez|div|divu|la|li|move|mul|neg|not|rem|remu|seq|sge|sgt|sle|sne)\\b",
+			"comment": "Pseudo instructions"
+		},
+		{
+			"name": "entity.name.function.mips",
+			"match": "\\b(syscall|nop)\\b",
+			"comment": "Special Instructions"
+		},
+		{
+			"name": "entity.name.tag.mips",
+			"match": "\\b[\\w]+\\b",
+			"comment": "Labels"
+		}
+	],
+	"repository": {
+		"codetags": {
+			"match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
+			"captures": {
+				"1": {
+					"name": "keyword.codetag.notation.mips"
+				}
+			}
+		},
+		"comments": {
+			"name": "comment.line.number-sign.mips",
+			"begin": "(\\#)",
+			"beginCaptures": {
+				"1": {
+					"name": "punctuation.definition.comment.mips"
+				}
+			},
+			"end": "($)",
+			"patterns": [
+				{
+					"include": "#codetags"
+				}
+			]
+		},
+		"punctuation": {
+			"patterns": [
+				{
+					"name": "punctuation.separator.colon.mips",
+					"match": ":"
+				},
+				{
+					"name": "punctuation.separator.element.mips",
+					"match": ","
+				}
+			]
+		},
+		"number": {
+			"name": "constant.numeric.mips",
+			"patterns": [
+				{
+					"include": "#number-dec"
+				},
+				{
+					"include": "#number-hex"
+				},
+				{
+					"include": "#number-oct"
+				},
+				{
+					"include": "#number-bin"
+				},
+				{
+					"name": "invalid.illegal.name.mips",
+					"match": "\\b[0-9]+\\w+"
+				}
+			]
+		},
+		"number-dec": {
+			"name": "constant.numeric.dec.mips",
+			"match": "\\b(?:(?:\\+|-)?)(?:(?:[1-9](?:_?[0-9])*)|(?:0(?:_?0)*))\\b",
+			"captures": {
+				"1": {
+					"name": "storage.type.imaginary.number.mips"
+				},
+				"2": {
+					"name": "invalid.illegal.dec.mips"
+				},
+				"3": {
+					"name": "invalid.illegal.dec.mips"
+				}
+			}
+		},
+		"number-hex": {
+			"name": "constant.numeric.hex.mips",
+			"match": "(0[xX])(_?[0-9a-fA-F])+\\b",
+			"captures": {
+				"1": {
+					"name": "storage.type.number.mips"
+				}
+			}
+		},
+		"number-oct": {
+			"name": "constant.numeric.oct.mips",
+			"match": "\b(?:0(?:o|O)(?:_?[0-7])+)\b",
+			"captures": {
+				"1": {
+					"name": "storage.type.number.mips"
+				}
+			}
+		},
+		"number-bin": {
+			"name": "constant.numeric.bin.mips",
+			"match": "\\b(?:0(?:b|B)(?:_?[0-1])+)\\b",
+			"captures": {
+				"1": {
+					"name": "storage.type.number.mips"
+				}
+			}
+		}
+}

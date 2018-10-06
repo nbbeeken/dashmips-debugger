@@ -26,7 +26,7 @@
             {
                 "id": "mips",
 				"aliases": [
-					"MIPS Assembly",
+					"MIPS",
                     "mips",
                     "dashmips"
 				],
@@ -37,8 +37,8 @@
         "grammars": [
 			{
 				"language": "mips",
-				"scopeName": "mips",
-				"path": "./language/mips.tmLanguage"
+				"scopeName": "source.mips",
+                "path": "./language/mips.tmLanguage.json"
 			}
 		],
         "snippets": [
