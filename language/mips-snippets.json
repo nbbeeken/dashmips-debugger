@@ -1,428 +1,422 @@
 {
     "add": {
         "prefix": "add",
-        "body": "add \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "body": "add     \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
         "description": "Add Reg[rd]=Reg[rs]+Reg[rt].",
         "scope": "mips"
     },
     "addi": {
         "prefix": "addi",
-        "body": "addi ",
-        "description": "",
+        "body": "addi    \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Add immediate Reg[rs]=Reg[rt]+immediate.",
         "scope": "mips"
     },
     "addiu": {
         "prefix": "addiu",
-        "body": "addiu ",
-        "description": "",
+        "body": "addiu   \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Add immediate unsigned Reg[rs]=Reg[rt]+immediate.",
         "scope": "mips"
     },
     "addu": {
         "prefix": "addu",
-        "body": "addu ",
+        "body": "addu    \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
         "description": "Add unsigned Reg[rd]=Reg[rs]+Reg[rt].",
         "scope": "mips"
     },
     "and": {
         "prefix": "and",
-        "body": "and ",
-        "description": "",
+        "body": "and     \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Bitwise And Reg[rd]=Reg[rs]&Reg[rt].",
         "scope": "mips"
     },
     "andi": {
         "prefix": "andi",
-        "body": "andi ",
-        "description": "",
+        "body": "andi    \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "And immediate Reg[rs]=Reg[rt]&immediate.",
         "scope": "mips"
     },
     "beq": {
         "prefix": "beq",
-        "body": "beq ",
-        "description": "Branch to address if Reg[rs] equals Reg[rt].",
+        "body": "beq     \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Branch to address if Reg[rs] == Reg[rt].",
         "scope": "mips"
     },
     "bgez": {
         "prefix": "bgez",
-        "body": "bgez ",
-        "description": "",
+        "body": "bgez    \\$${1:t0}, ${2:label}",
+        "description": "Branch if Reg[rs] >= 0.",
         "scope": "mips"
     },
     "bgezal": {
         "prefix": "bgezal",
-        "body": "bgezal ",
-        "description": "",
+        "body": "bgezal  \\$${1:t0}, ${2:label}",
+        "description": "Branch if Reg[rs] >= 0 and link.",
         "scope": "mips"
     },
     "bgtz": {
         "prefix": "bgtz",
-        "body": "bgtz ",
-        "description": "",
+        "body": "bgtz    \\$${1:t0}, ${2:label}",
+        "description": "Branch if Reg[rs] > 0.",
         "scope": "mips"
     },
     "blez": {
         "prefix": "blez",
-        "body": "blez ",
-        "description": "",
+        "body": "blez    \\$${1:t0}, ${2:label}",
+        "description": "Branch if Reg[rs] <= 0.",
         "scope": "mips"
     },
     "bltz": {
         "prefix": "bltz",
-        "body": "bltz ",
-        "description": "",
+        "body": "bltz    \\$${1:t0}, ${2:label}",
+        "description": "Branch if Reg[rs] < 0.",
         "scope": "mips"
     },
     "bltzal": {
         "prefix": "bltzal",
-        "body": "bltzal ",
-        "description": "",
+        "body": "bltzal  \\$${1:t0}, ${2:label}",
+        "description": "Branch if Reg[rs] < 0 and link.",
         "scope": "mips"
     },
     "bne": {
         "prefix": "bne",
-        "body": "bne ",
-        "description": "",
+        "body": "bne     \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Branch to address if Reg[rs] != Reg[rt].",
         "scope": "mips"
     },
     "clo": {
         "prefix": "clo",
-        "body": "clo ",
-        "description": "",
+        "body": "clo     \\$${1:t0}, \\$${2:t1}",
+        "description": "Count number of leading ones in Reg[rt].",
         "scope": "mips"
     },
     "clz": {
         "prefix": "clz",
-        "body": "clz ",
-        "description": "",
+        "body": "clz     \\$${1:t0}, \\$${2:t1}",
+        "description": "Count number of leading zeros in Reg[rt].",
         "scope": "mips"
     },
     "div": {
         "prefix": "div",
-        "body": "div ",
-        "description": "",
+        "body": "div     \\$${1:t0}, \\$${2:t1}",
+        "description": "Divide.",
         "scope": "mips"
     },
     "divu": {
         "prefix": "divu",
-        "body": "divu ",
-        "description": "",
+        "body": "divu    \\$${1:t0}, \\$${2:t1}",
+        "description": "Divide unsigned.",
         "scope": "mips"
     },
     "j": {
         "prefix": "j",
-        "body": "j ",
+        "body": "j       ${1:label}",
         "description": "Jump unconditionally to label.",
         "scope": "mips"
     },
     "jal": {
         "prefix": "jal",
-        "body": "jal ",
+        "body": "jal     ${1:label}",
         "description": "Jump unconditionally to label and set $ra to current $pc.",
         "scope": "mips"
     },
     "jalr": {
         "prefix": "jalr",
-        "body": "jalr ",
-        "description": "",
+        "body": "jalr    \\$${1:t0}, \\$${2:t1}",
+        "description": "Jump and link register.",
         "scope": "mips"
     },
     "jr": {
         "prefix": "jr",
-        "body": "jr ",
-        "description": "",
+        "body": "jr      \\$${1:t0}",
+        "description": "Jump to address in Reg[rs].",
         "scope": "mips"
     },
     "la": {
         "prefix": "la",
-        "body": "la ",
+        "body": "la      \\$${1:t0}, ${2:label}",
         "description": "Load address.",
         "scope": "mips"
     },
     "lb": {
         "prefix": "lb",
-        "body": "lb ",
-        "description": "",
+        "body": "lb      \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Load Byte.",
         "scope": "mips"
     },
     "lbu": {
         "prefix": "lbu",
-        "body": "lbu ",
-        "description": "",
+        "body": "lbu     \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Load Byte Unsigned.",
         "scope": "mips"
     },
     "lh": {
         "prefix": "lh",
-        "body": "lh ",
-        "description": "",
+        "body": "lh      \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Load half-word.",
         "scope": "mips"
     },
     "lhu": {
         "prefix": "lhu",
-        "body": "lhu ",
-        "description": "",
+        "body": "lhu     \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Load half-word unsigned.",
         "scope": "mips"
     },
     "li": {
         "prefix": "li",
-        "body": "li ",
-        "description": "Load address.",
+        "body": "li      \\$${1:t0}, ${2:100}",
+        "description": "Load immediate.",
         "scope": "mips"
     },
     "lui": {
         "prefix": "lui",
-        "body": "lui ",
+        "body": "lui     \\$${1:t0}, ${2:100}",
         "description": "Load upper immediate, NOT LOAD FROM MEMORY.",
         "scope": "mips"
     },
     "lw": {
         "prefix": "lw",
-        "body": "lw ",
-        "description": "",
+        "body": "lw      \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Load word.",
         "scope": "mips"
     },
     "lwl": {
         "prefix": "lwl",
-        "body": "lwl ",
-        "description": "",
+        "body": "lwl     \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Load Word Left: Load from 1 to 4 bytes left-justified into $t1.",
         "scope": "mips"
     },
     "lwr": {
         "prefix": "lwr",
-        "body": "lwr ",
-        "description": "",
+        "body": "lwr     \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Load Word Right: Load from 1 to 4 bytes right-justified into $t1.",
         "scope": "mips"
     },
     "madd": {
         "prefix": "madd",
-        "body": "madd ",
-        "description": "",
+        "body": "madd    \\$${1:t0}, \\$${2:t1}",
+        "description": "Multiply Add.",
         "scope": "mips"
     },
     "maddu": {
         "prefix": "maddu",
-        "body": "maddu ",
-        "description": "",
+        "body": "maddu   \\$${1:t0}, \\$${2:t1}",
+        "description": "Multiply Add Unsigned.",
         "scope": "mips"
     },
     "mfhi": {
         "prefix": "mfhi",
-        "body": "mfhi ",
-        "description": "",
+        "body": "mfhi    \\$${1:t0}",
+        "description": "Move from hi register to Reg[rd].",
         "scope": "mips"
     },
     "mflo": {
         "prefix": "mflo",
-        "body": "mflo ",
-        "description": "",
+        "body": "mflo    \\$${1:t0}",
+        "description": "Move from lo register to Reg[rd].",
         "scope": "mips"
     },
     "move": {
         "prefix": "move",
-        "body": "move ",
+        "body": "move    \\$${1:t0}, \\$${2:t1}",
         "description": "Overwrite rd with rs.",
         "scope": "mips"
     },
     "movn": {
         "prefix": "movn",
-        "body": "movn ",
-        "description": "",
+        "body": "movn    \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Move conditional Reg[rd]=Reg[rs] if Reg[rt] != 0.",
         "scope": "mips"
     },
     "movz": {
         "prefix": "movz",
-        "body": "movz ",
-        "description": "",
+        "body": "movz    \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Move conditional Reg[rd]=Reg[rs] if Reg[rt] == 0.",
         "scope": "mips"
     },
     "msub": {
         "prefix": "msub",
-        "body": "msub ",
-        "description": "",
+        "body": "msub    \\$${1:t0}, \\$${2:t1}",
+        "description": "Multiply Subtract.",
         "scope": "mips"
     },
     "msubu": {
         "prefix": "msubu",
-        "body": "msubu ",
-        "description": "",
+        "body": "msubu   \\$${1:t0}, \\$${2:t1}",
+        "description": "Multiply Subtract Unsigned.",
         "scope": "mips"
     },
     "mthi": {
         "prefix": "mthi",
-        "body": "mthi ",
-        "description": "",
+        "body": "mthi    \\$${1:t0}",
+        "description": "Move to hi register from Reg[rd].",
         "scope": "mips"
     },
     "mtlo": {
         "prefix": "mtlo",
-        "body": "mtlo ",
-        "description": "",
+        "body": "mtlo    \\$${1:t0}",
+        "description": "Move to lo register from Reg[rd].",
         "scope": "mips"
     },
     "mul": {
         "prefix": "mul",
-        "body": "mul ",
-        "description": "",
+        "body": "mul     \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Multiplication without overflow.",
         "scope": "mips"
     },
     "mult": {
         "prefix": "mult",
-        "body": "mult ",
-        "description": "",
+        "body": "mult    \\$${1:t0}, \\$${2:t1}",
+        "description": "Multiply.",
         "scope": "mips"
     },
     "multu": {
         "prefix": "multu",
-        "body": "multu ",
-        "description": "",
+        "body": "multu   \\$${1:t0}, \\$${2:t1}",
+        "description": "Multiply Unsigned.",
         "scope": "mips"
     },
     "nop": {
         "prefix": "nop",
-        "body": "nop ",
+        "body": "nop    ",
         "description": "Do nothing.",
         "scope": "mips"
     },
     "nor": {
         "prefix": "nor",
-        "body": "nor ",
-        "description": "",
+        "body": "nor     \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Bitwise Nor Reg[rd]=~(Reg[rs]|Reg[rt]).",
         "scope": "mips"
     },
     "or": {
         "prefix": "or",
-        "body": "or ",
-        "description": "",
+        "body": "or      \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Bitwise And Reg[rd]=Reg[rs]|Reg[rt].",
         "scope": "mips"
     },
     "ori": {
         "prefix": "ori",
-        "body": "ori ",
-        "description": "",
+        "body": "ori     \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Or immediate Reg[rs]=Reg[rt]|immediate.",
         "scope": "mips"
     },
     "sb": {
         "prefix": "sb",
-        "body": "sb ",
-        "description": "",
-        "scope": "mips"
-    },
-    "sc": {
-        "prefix": "sc",
-        "body": "sc ",
-        "description": "",
+        "body": "sb      \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Store Byte.",
         "scope": "mips"
     },
     "sh": {
         "prefix": "sh",
-        "body": "sh ",
-        "description": "",
+        "body": "sh      \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Store halfword.",
         "scope": "mips"
     },
     "sll": {
         "prefix": "sll",
-        "body": "sll ",
-        "description": "",
+        "body": "sll     \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Shift Left Logical.",
         "scope": "mips"
     },
     "sllv": {
         "prefix": "sllv",
-        "body": "sllv ",
-        "description": "",
+        "body": "sllv    \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Shift Left Logical.",
         "scope": "mips"
     },
     "slt": {
         "prefix": "slt",
-        "body": "slt ",
-        "description": "",
+        "body": "slt     \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Set on less than.",
         "scope": "mips"
     },
     "slti": {
         "prefix": "slti",
-        "body": "slti ",
-        "description": "",
+        "body": "slti    \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Set on less than immediate.",
         "scope": "mips"
     },
     "sltiu": {
         "prefix": "sltiu",
-        "body": "sltiu ",
-        "description": "",
+        "body": "sltiu   \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Set on less than immediate unsigned.",
         "scope": "mips"
     },
     "sltu": {
         "prefix": "sltu",
-        "body": "sltu ",
-        "description": "",
+        "body": "sltu    \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Set on less than unsigned.",
         "scope": "mips"
     },
     "sra": {
         "prefix": "sra",
-        "body": "sra ",
-        "description": "",
+        "body": "sra     \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Shift Right Arithmetic.",
         "scope": "mips"
     },
     "srav": {
         "prefix": "srav",
-        "body": "srav ",
-        "description": "",
+        "body": "srav    \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Bitwise Shift Right Arithmetic Variable.",
         "scope": "mips"
     },
     "srl": {
         "prefix": "srl",
-        "body": "srl ",
-        "description": "",
+        "body": "srl     \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Shift Right Logical.",
         "scope": "mips"
     },
     "srlv": {
         "prefix": "srlv",
-        "body": "srlv ",
-        "description": "",
+        "body": "srlv    \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Bitwise Shift Right Logical Variable.",
         "scope": "mips"
     },
     "sub": {
         "prefix": "sub",
-        "body": "sub ",
-        "description": "",
+        "body": "sub     \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Subtract Reg[rd]=Reg[rs]-Reg[rt].",
         "scope": "mips"
     },
     "subu": {
         "prefix": "subu",
-        "body": "subu ",
-        "description": "",
+        "body": "subu    \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Subtract unsigned Reg[rd]=Reg[rs]-Reg[rt].",
         "scope": "mips"
     },
     "sw": {
         "prefix": "sw",
-        "body": "sw ",
-        "description": "",
+        "body": "sw      \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Store word.",
         "scope": "mips"
     },
     "swl": {
         "prefix": "swl",
-        "body": "swl ",
-        "description": "",
+        "body": "swl     \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Store Word Left: Load from 1 to 4 bytes left-justified into $t1.",
         "scope": "mips"
     },
     "swr": {
         "prefix": "swr",
-        "body": "swr ",
-        "description": "",
+        "body": "swr     \\$${1:t0}, ${3:100}(\\$${2:t1})",
+        "description": "Store Word Right: Load from 1 to 4 bytes right-justified into $t1.",
         "scope": "mips"
     },
     "syscall": {
         "prefix": "syscall",
-        "body": "syscall ",
+        "body": "syscall",
         "description": "Call syscall specified in $v0.",
         "scope": "mips"
     },
     "xor": {
         "prefix": "xor",
-        "body": "xor ",
-        "description": "",
+        "body": "xor     \\$${1:t0}, \\$${2:t1}, \\$${3:t2}",
+        "description": "Bitwise And Reg[rd]=Reg[rs]^Reg[rt].",
         "scope": "mips"
     },
     "xori": {
         "prefix": "xori",
-        "body": "xori ",
-        "description": "",
+        "body": "xori    \\$${1:t0}, \\$${2:t1}, ${3:100}",
+        "description": "Xor immediate Reg[rs]=Reg[rt]^immediate.",
         "scope": "mips"
     }
 }
