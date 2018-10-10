@@ -22,7 +22,7 @@ export class Client extends EventEmitter {
 
     get vscodeBreakPoints(): SourceLine[] {
         const list: SourceLine[] = [];
-        if(!(!!this.program)) {
+        if (!(!!this.program)) {
             return list;
         }
         for (const srcLineBp of this.breakpoints) {
@@ -91,6 +91,9 @@ export class Client extends EventEmitter {
         super();
 
         this.program = compileMips(program);
+        if (this.program === null) {
+            throw Error('Mips could not be compiled');
+        }
         this.pathToMain = program;
 
         this.breakpoints = new Set<number>();
@@ -148,17 +151,20 @@ export class Client extends EventEmitter {
     }
 }
 
-export function compileMips(filename: string): MipsProgram {
+export function compileMips(filename: string): MipsProgram | null {
     if (!isDashmipsInstalled()) {
         throw Error('Dashmips not installed');
     }
 
-    const stdout = execSync(
-        `python -m dashmips compile ${filename} --json`,
-        { encoding: 'utf8' }
-    );
-
-    return JSON.parse(stdout.trim()) as MipsProgram;
+    try {
+        const stdout = execSync(
+            `python -m dashmips compile ${filename} --json`,
+            { encoding: 'utf8' }
+        );
+        return JSON.parse(stdout.trim()) as MipsProgram;
+    } catch {
+        return null;
+    }
 }
 
 export function isDashmipsInstalled(): boolean {

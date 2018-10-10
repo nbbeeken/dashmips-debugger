@@ -117,12 +117,16 @@ export class MipsDebugSession extends LoggingDebugSession {
 
         this.config = args;
 
-        this.client = new Client(
-            this.convertDebuggerPathToClient(args.program)
-        );
-        this.setEventHandlers();
-        this.clientLaunched.notify();
-        this.sendResponse(response);
+        try {
+            this.client = new Client(
+                this.convertDebuggerPathToClient(args.program)
+            );
+            this.setEventHandlers();
+            this.clientLaunched.notify();
+            this.sendResponse(response);
+        } catch(ex) {
+            this.sendErrorResponse(response, ex);
+        }
     }
 
     protected async setBreakPointsRequest(
