@@ -5,18 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "dashmips",
-            "request": "launch",
-            "name": "Main Mips File",
-            "program": "${file}",
-            "stopOnEntry": true
-        },
-        {
             "name": "Extension",
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
+                "--disable-extensions",
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "${workspaceFolder}/demo"
             ],

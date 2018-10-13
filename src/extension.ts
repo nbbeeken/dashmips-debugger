@@ -48,9 +48,11 @@ export class DashmipsConfigurationProvider
 
         const logArg = config.log ? '-l' : '';
 
-        this.terminal = vscode.window.createTerminal('Dashmips');
-        this.terminal.sendText(`python -m dashmips debug ${logArg}`, true);
-        this.terminal.show(false);
+        if (config.launchDebugger !== false) {
+            this.terminal = vscode.window.createTerminal('Dashmips');
+            this.terminal.sendText(`python -m dashmips debug ${logArg}`, true);
+            this.terminal.show(false);
+        }
 
         if (!config.type && !config.request && !config.name) {
             const editor = vscode.window.activeTextEditor;

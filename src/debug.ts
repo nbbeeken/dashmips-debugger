@@ -17,8 +17,6 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** Automatically stop target after launch.
      * If not specified, target does not stop. */
     stopOnEntry?: boolean;
-    /** enable logging the Debug Adapter Protocol */
-    trace?: boolean;
     /** Enable dashmips logger */
     log?: boolean;
     /** Enable dashmips logger */
@@ -111,7 +109,7 @@ export class MipsDebugSession extends LoggingDebugSession {
         args: LaunchRequestArguments
     ) {
 
-        logger.setup(args.trace ?
+        logger.setup(false ?
             Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false
         );
 

@@ -35,10 +35,28 @@
         "description": "And immediate Reg[rs]=Reg[rt]&immediate.",
         "scope": "mips"
     },
+    "b": {
+        "prefix": "b",
+        "body": "b       label",
+        "description": "Branch.",
+        "scope": "mips"
+    },
     "beq": {
         "prefix": "beq",
-        "body": "beq     \\$${1:t0}, \\$${2:t1}, ${3:100}",
-        "description": "Branch to address if Reg[rs] == Reg[rt].",
+        "body": "beq     \\$${1:t0}, \\$${2:t1}, label",
+        "description": "Branch to label if Reg[rs] == Reg[rt].",
+        "scope": "mips"
+    },
+    "beqz": {
+        "prefix": "beqz",
+        "body": "beqz    \\$${1:t0}, label",
+        "description": "Branch to label if Reg[rd]==0.",
+        "scope": "mips"
+    },
+    "bge": {
+        "prefix": "bge",
+        "body": "bge     \\$${1:t0}, \\$${2:t1}, label",
+        "description": "Branch to label if Reg[rd]>Reg[rs].",
         "scope": "mips"
     },
     "bgez": {
@@ -53,6 +71,12 @@
         "description": "Branch if Reg[rs] >= 0 and link.",
         "scope": "mips"
     },
+    "bgt": {
+        "prefix": "bgt",
+        "body": "bgt     \\$${1:t0}, \\$${2:t1}|${3:100}, label",
+        "description": "Branch to label if Reg[rd]>Reg[rs].",
+        "scope": "mips"
+    },
     "bgtz": {
         "prefix": "bgtz",
         "body": "bgtz    \\$${1:t0}, ${2:label}",
@@ -63,6 +87,12 @@
         "prefix": "blez",
         "body": "blez    \\$${1:t0}, ${2:label}",
         "description": "Branch if Reg[rs] <= 0.",
+        "scope": "mips"
+    },
+    "blt": {
+        "prefix": "blt",
+        "body": "blt     \\$${1:t0}, \\$${2:t1}|${3:100}, label",
+        "description": "Branch to label if Reg[rd]<Reg[rs].",
         "scope": "mips"
     },
     "bltz": {
@@ -79,8 +109,14 @@
     },
     "bne": {
         "prefix": "bne",
-        "body": "bne     \\$${1:t0}, \\$${2:t1}, ${3:100}",
-        "description": "Branch to address if Reg[rs] != Reg[rt].",
+        "body": "bne     \\$${1:t0}, \\$${2:t1}, label",
+        "description": "Branch to label if Reg[rs] != Reg[rt].",
+        "scope": "mips"
+    },
+    "bnez": {
+        "prefix": "bnez",
+        "body": "bnez    \\$${1:t0}, label",
+        "description": "Branch to label if Reg[rd]!=0.",
         "scope": "mips"
     },
     "clo": {
@@ -273,6 +309,12 @@
         "prefix": "multu",
         "body": "multu   \\$${1:t0}, \\$${2:t1}",
         "description": "Multiply Unsigned.",
+        "scope": "mips"
+    },
+    "neg": {
+        "prefix": "neg",
+        "body": "neg     \\$${1:t0}, \\$${2:t1}",
+        "description": "Negate Reg[rs] and store in Reg[rd].",
         "scope": "mips"
     },
     "nop": {

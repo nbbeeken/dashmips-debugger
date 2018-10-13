@@ -10,6 +10,7 @@ const connOpts: TcpNetConnectOpts = {
     port: 9999,
     readable: true,
     writable: true,
+    timeout: 0, // Should never timeout.
 } as TcpNetConnectOpts;
 
 

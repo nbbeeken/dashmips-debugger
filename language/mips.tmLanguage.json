@@ -39,7 +39,7 @@
 		},
 		{
 			"name": "support.function.source.mips",
-			"match": "\\b(add|addi|addiu|addu|and|andi|beq|bgez|bgezal|bgtz|blez|bltz|bltzal|bne|clo|clz|div|divu|j|jal|jalr|jr|la|lb|lbu|lh|lhu|li|lui|lw|lwl|lwr|madd|maddu|mfhi|mflo|move|movn|movz|msub|msubu|mthi|mtlo|mul|mult|multu|nor|or|ori|sb|sh|sll|sllv|slt|slti|sltiu|sltu|sra|srav|srl|srlv|sub|subu|sw|swl|swr|xor|xori)\\b",
+			"match": "\\b(add|addi|addiu|addu|and|andi|b|beq|beqz|bge|bgez|bgezal|bgt|bgtz|blez|blt|bltz|bltzal|bne|bnez|clo|clz|div|divu|j|jal|jalr|jr|la|lb|lbu|lh|lhu|li|lui|lw|lwl|lwr|madd|maddu|mfhi|mflo|move|movn|movz|msub|msubu|mthi|mtlo|mul|mult|multu|neg|nop|nor|or|ori|sb|sh|sll|sllv|slt|slti|sltiu|sltu|sra|srav|srl|srlv|sub|subu|sw|swl|swr|syscall|xor|xori)\\b",
 			"comment": "Instructions provided by the MIPS assembly language"
 		},
 		{

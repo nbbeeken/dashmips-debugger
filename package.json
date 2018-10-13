@@ -77,11 +77,6 @@
                                 "description": "Automatically stop after launch.",
                                 "default": true
                             },
-                            "trace": {
-                                "type": "boolean",
-                                "description": "Enable logging of the Debug Adapter Protocol.",
-                                "default": true
-                            },
                             "log": {
                                 "type": "boolean",
                                 "description": "Enable Dashmips logger",
@@ -97,6 +92,29 @@
                                 "type": "string",
                                 "description": "Display registers in formats: 'hex' | 'oct' | 'dec' | 'bin'",
                                 "default": "hex"
+                            },
+                            "port": {
+                                "type": "number",
+                                "description": "Port that dashmips debugger is running on",
+                                "default": 9999
+                            },
+                            "host": {
+                                "type": "string",
+                                "description": "Host that dashmips debugger is running on",
+                                "default": "localhost"
+                            },
+                            "launchDebugger": {
+                                "type": "boolean",
+                                "description": "Launch dashmips in terminal upon debugging",
+                                "default": true
+                            },
+                            "console": {
+                                "enum": [
+                                    "integratedTerminal",
+                                    "externalTerminal"
+                                ],
+                                "description": "Where to launch the debug target: internal console, integrated terminal, or external terminal.",
+                                "default": "integratedTerminal"
                             }
                         }
                     }
@@ -105,10 +123,21 @@
                     {
                         "type": "dashmips",
                         "request": "launch",
-                        "name": "dashmips (Current File)",
+                        "name": "dashmips (Run Current File)",
                         "program": "${file}",
                         "stopOnEntry": true,
-                        "registerFormat": "hex"
+                        "registerFormat": "dec"
+                    },
+                    {
+                        "type": "dashmips",
+                        "request": "launch",
+                        "name": "dashmips (Attach Current File)",
+                        "program": "${file}",
+                        "stopOnEntry": true,
+                        "registerFormat": "dec",
+                        "port": 9999,
+                        "host": "localhost",
+                        "launchDebugger": false
                     }
                 ],
                 "configurationSnippets": [
@@ -118,10 +147,25 @@
                         "body": {
                             "type": "dashmips",
                             "request": "launch",
-                            "name": "Current File",
+                            "name": "dashmips (Run Current File)",
                             "program": "^\"\\${file}\"",
                             "stopOnEntry": true,
-                            "registerFormat": "hex"
+                            "registerFormat": "dec"
+                        }
+                    },
+                    {
+                        "label": "Dashmips Debug: Attach",
+                        "description": "A new configuration for 'debugging' a user selected mips file.",
+                        "body": {
+                            "type": "dashmips",
+                            "request": "launch",
+                            "name": "dashmips (Attach Current File)",
+                            "program": "^\"\\${file}\"",
+                            "stopOnEntry": true,
+                            "registerFormat": "dec",
+                            "port": 9999,
+                            "host": "localhost",
+                            "launchDebugger": false
                         }
                     }
                 ]
