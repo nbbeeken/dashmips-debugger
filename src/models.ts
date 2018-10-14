@@ -5,7 +5,7 @@ export interface SourceLine {
 }
 
 export interface Label {
-    type: string;
+    kind: '.text' | '.data';
     value: number;
     name: string;
 }
