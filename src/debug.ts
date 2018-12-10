@@ -287,7 +287,7 @@ export class MipsDebugSession extends LoggingDebugSession {
         args: DebugProtocol.DisconnectArguments
     ) {
         this.client.stop();
-        process.kill(this.dashmipsPid, 'SIGTERM');
+        process.kill(this.dashmipsPid, 'SIGINT');
         this.shutdown();
     }
 

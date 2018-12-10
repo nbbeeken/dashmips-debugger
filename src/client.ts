@@ -159,7 +159,7 @@ export function compileMips(filename: string): MipsProgram | null {
 
     try {
         const stdout = execSync(
-            `python -m dashmips compile ${filename} --json`,
+            `python -m dashmips compile -f ${filename} --json`,
             { encoding: 'utf8' }
         );
         return JSON.parse(stdout.trim()) as MipsProgram;
