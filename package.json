@@ -2,7 +2,7 @@
     "name": "dashmips-debugger",
     "displayName": "dashmips-debugger",
     "description": "Debugs mips while executing in Dashmips interpreter",
-    "version": "0.0.10",
+    "version": "0.0.11",
     "license": "MIT",
     "publisher": "roadkillco",
     "repository": {
@@ -181,18 +181,18 @@
         "test": "mocha -u tdd ./out/tests/"
     },
     "devDependencies": {
-        "@types/mocha": "^2.2.42",
-        "@types/node": "^8.10.25",
+        "@types/mocha": "^5.2.5",
+        "@types/node": "^10.12.18",
         "mocha": "^5.2.0",
         "npx": "^10.2.0",
-        "tslint": "^5.8.0",
-        "typescript": "^2.6.1",
-        "vsce": "^1.51.1",
-        "vscode": "^1.1.21",
-        "vscode-debugadapter-testsupport": "^1.32.0"
+        "tslint": "^5.12.1",
+        "typescript": "^3.2.4",
+        "vsce": "^1.54.0",
+        "vscode": "^1.1.27",
+        "vscode-debugadapter-testsupport": "^1.33.0"
     },
     "dependencies": {
-        "vscode-debugadapter": "^1.32.1",
-        "vscode-debugprotocol": "^1.32.0"
+        "vscode-debugadapter": "^1.33.0",
+        "vscode-debugprotocol": "^1.33.0"
     }
 }

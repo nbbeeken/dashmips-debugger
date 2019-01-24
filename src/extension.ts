@@ -1,12 +1,9 @@
 'use strict';
 import * as Net from 'net';
 import * as vscode from 'vscode';
-import {
-    debug, DebugConfigurationProvider, WorkspaceFolder, DebugConfiguration,
-    ProviderResult, CancellationToken
-} from 'vscode';
-import { MipsDebugSession } from './debug';
+import { CancellationToken, debug, DebugConfiguration, DebugConfigurationProvider, ProviderResult, WorkspaceFolder } from 'vscode';
 import { isDashmipsInstalled } from './client';
+import { MipsDebugSession } from './debug';
 
 const EMBED_DEBUG_ADAPTER = false;
 
@@ -82,7 +79,8 @@ export class DashmipsConfigurationProvider
                     session.start(socket as NodeJS.ReadableStream, socket);
                 }).listen(0);
             }
-            config.debugServer = this.server.address().port;
+            const addr = (this.server.address() as Net.AddressInfo);
+            config.debugServer = addr.port;
         }
         return config;
     }

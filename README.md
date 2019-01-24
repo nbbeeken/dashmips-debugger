@@ -26,6 +26,10 @@ Very much a work in progress.
 
 ## Release Notes
 
+### 0.0.11
+
+Version jump to sync with [dashmips python extension](https://pypi.org/project/dashmips/).
+
 ### 0.0.2
 
 Add icon

@@ -1,9 +1,9 @@
-import { EventEmitter } from 'events';
-import { Socket, TcpNetConnectOpts, connect } from 'net';
-import { MipsProgram, DebugMessage, SourceLine } from './models';
 import { execSync } from 'child_process';
-import { DebugProtocol } from 'vscode-debugprotocol';
+import { EventEmitter } from 'events';
+import { connect, Socket, TcpNetConnectOpts } from 'net';
 import { basename } from 'path';
+import { DebugProtocol } from 'vscode-debugprotocol';
+import { DebugMessage, MipsProgram, SourceLine } from './models';
 
 const connOpts: TcpNetConnectOpts = {
     host: 'localhost',
