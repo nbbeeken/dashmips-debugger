@@ -1,7 +1,15 @@
 'use strict';
 import * as Net from 'net';
 import * as vscode from 'vscode';
-import { CancellationToken, debug, DebugConfiguration, DebugConfigurationProvider, ProviderResult, WorkspaceFolder } from 'vscode';
+import {
+    CancellationToken,
+    debug,
+    DebugConfiguration,
+    DebugConfigurationProvider,
+    ProviderResult,
+    WorkspaceFolder
+} from 'vscode';
+
 import { isDashmipsInstalled } from './client';
 import { MipsDebugSession } from './debug';
 

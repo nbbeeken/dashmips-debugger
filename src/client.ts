@@ -10,7 +10,7 @@ const connOpts: TcpNetConnectOpts = {
     port: 9999,
     readable: true,
     writable: true,
-    timeout: 0, // Should never timeout.
+    timeout: 5000, // Should never timeout.
 } as TcpNetConnectOpts;
 
 
@@ -20,6 +20,7 @@ export class Client extends EventEmitter {
     private socket: Socket;
     private breakpoints: Set<number>;  // These are indexes into program.source
     private buffer = '';
+    private firstContact = false;
 
     get vscodeBreakPoints(): SourceLine[] {
         const list: SourceLine[] = [];
@@ -107,6 +108,7 @@ export class Client extends EventEmitter {
         this.socket.setEncoding('utf8');
 
         this.socket.once('connect', this.onConnect);
+        this.socket.once('timeout', this.onTimeout);
         this.socket.once('error', (err) => this.emit('error', err));
         this.socket.once('end', () => this.emit('end'));
 
@@ -132,12 +134,22 @@ export class Client extends EventEmitter {
         return this.socket.write(msgTxt);
     }
 
+    private onTimeout = () => {
+        if(!this.firstContact) {
+            console.log('Unable To connect!!!');
+            this.emit('error', new Error('Could not connect!'));
+            this.emit('end');
+        }
+    }
+
     private onConnect = () => {
         const message: DebugMessage = {
             command: 'start',
             program: this.program,
             message: 'init'
         };
+        this.firstContact = true;
+        this.socket.setTimeout(0);
         this.send(message);
     }
 
