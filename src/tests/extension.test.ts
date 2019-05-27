@@ -1,18 +1,17 @@
-import * as assert from 'assert';
-import {DebugClient} from 'vscode-debugadapter-testsupport';
+import { DebugClient } from 'vscode-debugadapter-testsupport';
 
 suite('Dashmips Debug Adapter', () => {
-    let dc: DebugClient;
+	let dc: DebugClient;
 
-    const DEBUG_ADAPTER = './out/debugAdapter.js';
+	const DEBUG_ADAPTER = './out/debugAdapter.js';
 
-    setup(() => {
+	setup(() => {
 		dc = new DebugClient('node', DEBUG_ADAPTER, 'dashmips');
 		return dc.start();
-    });
-    teardown(() => dc.stop());
+	});
+	teardown(() => dc.stop());
 
-    suite('basic', () => {
+	suite('basic', () => {
 		test('unknown request should produce error', done => {
 			dc.send('illegal_request').then(() => {
 				done(new Error('does not report error on unknown request'));
