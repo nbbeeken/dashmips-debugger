@@ -53,8 +53,6 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
     private server?: Net.Server
     private terminal?: vscode.Terminal
 
-    // provideDebugConfigurations?(folder?: WorkspaceFolder, token?: CancellationToken): ProviderResult<DebugConfiguration[]> {}
-
     resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
 
         config.internalConsoleOptions = 'neverOpen'
@@ -77,45 +75,13 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
 
         const defaults = {
             args: [],
+            dashmipsArgs: [],
             console: 'integratedTerminal',
             dashmipsCommand: 'python -m dashmips debug',
             name: 'dashmips (Run Current File)',
         }
 
         return { ...defaults, ...config } as DebugConfiguration
-    }
-
-    async startDashmipsInstance(folder: WorkspaceFolder, config: DebugConfiguration) {
-        const debuggerCommand = 'python -m dashmips debug'
-
-        // Debug console not at all useful.
-        config.internalConsoleOptions = 'neverOpen'
-
-        if (!config.type && !config.request && !config.name) {
-            // No configuration generated yet
-            const editor = vscode.window.activeTextEditor
-            if (editor && editor.document.languageId === 'mips') {
-                config.type = 'dashmips'
-                config.name = 'dashmips (Run Current File)'
-                config.request = 'launch'
-                config.program = '${file}'
-                config.stopOnEntry = true
-                config.dashmipsCommand = debuggerCommand
-            }
-        }
-
-        if (!config.program) {
-            await vscode.window.showInformationMessage('Cannot find a program to debug')
-            throw Error('No program specified')
-        }
-
-        const debugArgs = [config.dashmipsCommand, ...config.dashmipsArgs, config.program]
-        if (config.args && config.args.length > 0) {
-            // Mips arguments
-            debugArgs.push('-a', ...config.args)
-        }
-
-        return debugArgs.join(' ')
     }
 
     dispose() {
@@ -133,13 +99,11 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
 
         if (!this.server) {
             // start listening on a random port
-            if (!this.server) {
-                this.server = Net.createServer(socket => {
-                    const session = new MipsDebugSession()
-                    session.setRunAsServer(true)
-                    session.start(socket as NodeJS.ReadableStream, socket)
-                }).listen(0)
-            }
+            this.server = Net.createServer(socket => {
+                const session = new MipsDebugSession()
+                session.setRunAsServer(true)
+                session.start(socket as NodeJS.ReadableStream, socket)
+            }).listen(0)
         }
 
         const addr = (this.server.address() as Net.AddressInfo)

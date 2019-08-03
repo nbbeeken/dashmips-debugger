@@ -9,11 +9,13 @@ import { Subject } from './subject'
 import { basename, dirname } from 'path'
 import { Client } from './client'
 import { DebugMessage } from './models'
-import { DashmipsClient } from './wsClient'
+import { client as WebSocket, connection as Connection } from 'websocket'
+import * as jayson from 'jayson'
 
 const DEBUG_LOGS = true
 export const THREAD_ID = 0
 export const THREAD_NAME = 'main'
+
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** Identifier */
@@ -39,7 +41,9 @@ export class MipsDebugSession extends LoggingDebugSession {
     private dashmipsHandle?: DebugProtocol.RunInTerminalResponse
     private config?: LaunchRequestArguments
     private clientLaunched = new Subject()
-
+    private ws: WebSocket
+    private wsConnection?: Connection
+    private id: number
 
     private set loggingEnabled(value: boolean) {
         logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
@@ -50,46 +54,8 @@ export class MipsDebugSession extends LoggingDebugSession {
         this.setDebuggerLinesStartAt1(true)
         this.setDebuggerColumnsStartAt1(false)
         this.loggingEnabled = DEBUG_LOGS
-    }
-
-    private setEventHandlers() {
-        if (!this.client) {
-            return
-        }
-
-        // 'step', 'breakpoint', 'exception', 'pause', 'entry', 'goto'
-
-        this.client.on(
-            'start', (msg: DebugMessage) => {
-                // this.dashmipsPid = parseInt(msg.message)
-                this.sendEvent(new StoppedEvent('entry', THREAD_ID))
-            }
-        )
-
-        this.client.on(
-            'step', () => this.sendEvent(new StoppedEvent('step', THREAD_ID))
-        )
-
-        this.client.on(
-            'continue', () => this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
-        )
-
-        this.client.on(
-            'stop', () => {
-                process.kill(this.dashmipsHandle!.body.processId!, 'SIGTERM')
-                this.sendEvent(new TerminatedEvent())
-            }
-        )
-
-        this.client.on(
-            'error', err => {
-                logger.error(err)
-                this.sendEvent(new TerminatedEvent())
-            }
-        )
-        this.client.on(
-            'end', () => this.sendEvent(new TerminatedEvent())
-        )
+        this.ws = new WebSocket()
+        this.id = 1
     }
 
     protected async initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments) {
@@ -108,8 +74,10 @@ export class MipsDebugSession extends LoggingDebugSession {
         this.configurationDone.notify()
     }
 
-    private async requestTerminalLaunch(launchArgs: LaunchRequestArguments) {
-        return new Promise((resolve, reject) => {
+    private async requestTerminalLaunch(launchArgs: LaunchRequestArguments): Promise<string | void> {
+        // This will never reject, since vscode is weird with long running proceses
+        // We will detect failure to launch when we are unable to connect to ws
+        return new Promise(resolve => {
             const args = [...launchArgs.dashmipsCommand.split(' '), ...launchArgs.dashmipsArgs, launchArgs.program]
             if (launchArgs.args && launchArgs.args.length > 0) {
                 // Mips arguments
@@ -125,26 +93,45 @@ export class MipsDebugSession extends LoggingDebugSession {
             } as DebugProtocol.RunInTerminalRequestArguments
 
             const termReqHandler = (resp: DebugProtocol.Response | DebugProtocol.RunInTerminalResponse) => {
+                this.dashmipsHandle = resp as DebugProtocol.RunInTerminalResponse
                 if (!resp.success) {
                     logger.error('Vscode failed to launch dashmips')
                     this.sendEvent(new TerminatedEvent())
-                    reject(new Error(`Run In Terminal: ${resp.message}`))
+                    return resolve('timeout')
                 }
-                this.dashmipsHandle = resp as DebugProtocol.RunInTerminalResponse
                 resolve()
             }
-            this.sendRequest('runInTerminal', termArgs, 8000, termReqHandler)
+            this.sendRequest('runInTerminal', termArgs, 2000, termReqHandler)
+        })
+    }
+
+    private async callDebuggerMethod(method: 'start' | 'step' | 'continue' | 'stop', params: any[] = []) {
+        return new Promise((resolve, reject) => {
+            if (!this.wsConnection) {
+                return reject(new Error('Cannot send with no connection'))
+            }
+            this.wsConnection.on('message', data => {
+                return resolve(JSON.parse(data.utf8Data!))
+            })
+            this.wsConnection.send(JSON.stringify({
+                method,
+                params,
+                jsonrpc: '2.0',
+                id: (this.id++),
+            }))
         })
     }
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
+        await this.requestTerminalLaunch(args) // alwawys succeeds
         try {
-            this.requestTerminalLaunch(args)
-            const client = new DashmipsClient()
-            await client.connect()
-            let r = await client.sendStart()
-            logger.warn(`Start said: ${r}`)
-            this.sendResponse(response)
+            this.ws.once('connect', async (connection: Connection) => {
+                this.wsConnection = connection
+                const r = await this.callDebuggerMethod('start')
+                this.clientLaunched.notify()
+                this.sendResponse(response)
+            })
+            this.ws.connect(`ws://${'localhost'}:${2390}`)
         } catch (ex) {
             MipsDebugSession.processError(ex, () => {
                 this.sendErrorResponse(response, ex)
@@ -154,22 +141,26 @@ export class MipsDebugSession extends LoggingDebugSession {
     }
 
     protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
+        this.clientLaunched.wait(2500)
+        if (!args.breakpoints) {
+            return this.sendResponse(response)
+        }
 
-        // this.client.breakpointsFromVscode(args.source.path, args.breakpoints)
+        const breakpoints = args.breakpoints.map(bp => ({
+            src: new Source(
+                basename(args.source.path!),
+                this.convertDebuggerPathToClient(args.source.path!),
+                undefined, undefined, 'dashmips'
+            ),
+            ...bp
+        })).map(bp => new Breakpoint(true, bp.line, bp.column, bp.src))
 
-        // const breakpoints = this.client.vscodeBreakPoints.map(l => {
-        //     const src = new Source(
-        //         basename(l.filename),
-        //         this.convertDebuggerPathToClient(l.filename),
-        //         undefined, undefined, 'dashmips'
-        //     )
-        //     return new Breakpoint(true, l.lineno, 0, src)
-        // }) as DebugProtocol.Breakpoint[]
+        const res = await this.callDebuggerMethod('continue', breakpoints)
 
-        // response.body = {
-        //     breakpoints
-        // }
-        this.sendResponse(response)
+        response.body = {
+            breakpoints
+        }
+        return this.sendResponse(response)
     }
 
     protected async threadsRequest(response: DebugProtocol.ThreadsResponse) {

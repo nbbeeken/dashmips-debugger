@@ -181,9 +181,9 @@
         "vscode-debugadapter-testsupport": "^1.35.0"
     },
     "dependencies": {
+        "jayson": "^3.0.2",
         "vscode-debugadapter": "^1.35.0",
         "vscode-debugprotocol": "^1.35.0",
-        "vscode-jsonrpc": "^4.0.0",
         "websocket": "^1.0.29"
     }
 }
