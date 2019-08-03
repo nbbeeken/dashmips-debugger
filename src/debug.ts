@@ -9,38 +9,47 @@ import { Subject } from './subject'
 import { basename, dirname } from 'path'
 import { Client } from './client'
 import { DebugMessage } from './models'
-import { LogLevel } from 'vscode-debugadapter/lib/logger'
+import { DashmipsClient } from './wsClient'
+
+const DEBUG_LOGS = true
+export const THREAD_ID = 0
+export const THREAD_NAME = 'main'
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
+    /** Identifier */
+    name: string
     /** An absolute path to the "program" to debug. */
     program: string
-    /** Automatically stop target after launch.
-     * If not specified, target does not stop. */
-    stopOnEntry?: boolean
-    /** Enable dashmips logger */
-    log?: boolean
-    /** Enable dashmips logger */
+    /** Format register values */
     registerFormat?: 'hex' | 'oct' | 'dec' | 'bin'
+    /** Where to launch the debug target: integrated terminal, or external terminal. */
+    console: 'integratedTerminal' | 'externalTerminal'
+    /** Arguments for mips program */
+    args: string[]
+    /** Arguments for dashmips debugger */
+    dashmipsArgs: string[]
+    /** The command used to launch dashmips debugger */
+    dashmipsCommand: string
 }
 
 export class MipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject()
-    private client: Client
+    private client?: Client
     private variableHandles = new Handles<string>()
-    private dashmipsPid: number
+    private dashmipsHandle: DebugProtocol.RunInTerminalResponse
     private config: LaunchRequestArguments
     private clientLaunched = new Subject()
 
+
     private set loggingEnabled(value: boolean) {
-        if (value) {
-            logger.setup(LogLevel.Verbose, true)
-        }
+        logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
     }
 
     public constructor() {
         super()
         this.setDebuggerLinesStartAt1(true)
         this.setDebuggerColumnsStartAt1(false)
+        this.loggingEnabled = DEBUG_LOGS
     }
 
     private setEventHandlers() {
@@ -52,22 +61,22 @@ export class MipsDebugSession extends LoggingDebugSession {
 
         this.client.on(
             'start', (msg: DebugMessage) => {
-                this.dashmipsPid = parseInt(msg.message)
-                this.sendEvent(new StoppedEvent('entry', 0))
+                // this.dashmipsPid = parseInt(msg.message)
+                this.sendEvent(new StoppedEvent('entry', THREAD_ID))
             }
         )
 
         this.client.on(
-            'step', () => this.sendEvent(new StoppedEvent('step', 0))
+            'step', () => this.sendEvent(new StoppedEvent('step', THREAD_ID))
         )
 
         this.client.on(
-            'continue', () => this.sendEvent(new StoppedEvent('breakpoint', 0))
+            'continue', () => this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
         )
 
         this.client.on(
             'stop', () => {
-                process.kill(this.dashmipsPid, 'SIGTERM')
+                process.kill(this.dashmipsHandle.body.processId, 'SIGTERM')
                 this.sendEvent(new TerminatedEvent())
             }
         )
@@ -87,7 +96,8 @@ export class MipsDebugSession extends LoggingDebugSession {
         response.body = response.body || {}
         response.body.supportsConfigurationDoneRequest = true
         response.body.supportsEvaluateForHovers = true
-        response.body.supportsStepBack = true
+        response.body.supportsStepBack = false
+        response.body.supportsValueFormattingOptions = true
         this.sendResponse(response)
         this.sendEvent(new InitializedEvent())
     }
@@ -98,49 +108,73 @@ export class MipsDebugSession extends LoggingDebugSession {
         this.configurationDone.notify()
     }
 
+    private async requestTerminalLaunch(launchArgs: LaunchRequestArguments) {
+        return new Promise((resolve, reject) => {
+            const args = [...launchArgs.dashmipsCommand.split(' '), ...launchArgs.dashmipsArgs, launchArgs.program]
+            if (launchArgs.args && launchArgs.args.length > 0) {
+                // Mips arguments
+                args.push('-a', ...launchArgs.args)
+            }
+
+            const kind = launchArgs.console.slice(0, -('Terminal'.length))
+
+            const termArgs = {
+                title: 'Dashmips',
+                kind,
+                args,
+            } as DebugProtocol.RunInTerminalRequestArguments
+
+            const termReqHandler = (resp: DebugProtocol.RunInTerminalResponse) => {
+                if (!resp.success) {
+                    logger.error('Vscode failed to launch dashmips')
+                    this.sendEvent(new TerminatedEvent())
+                    reject(new Error(`Run In Terminal: ${resp.message}`))
+                }
+                this.dashmipsHandle = resp
+                resolve()
+            }
+            this.sendRequest('runInTerminal', termArgs, 8000, termReqHandler)
+        })
+    }
+
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
-
-        logger.setup(false ?
-            Logger.LogLevel.Verbose : Logger.LogLevel.Stop, false
-        )
-
-        this.config = args
-
         try {
-            this.client = new Client(
-                this.convertDebuggerPathToClient(args.program)
-            )
-            this.setEventHandlers()
-            this.clientLaunched.notify()
+            this.requestTerminalLaunch(args)
+            const client = new DashmipsClient()
+            await client.connect()
+            let r = await client.sendStart()
+            logger.warn(`Start said: ${r}`)
             this.sendResponse(response)
         } catch (ex) {
-            this.sendErrorResponse(response, ex)
+            MipsDebugSession.processError(ex, () => {
+                this.sendErrorResponse(response, ex)
+                this.sendEvent(new TerminatedEvent())
+            })
         }
     }
 
     protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
-        await this.clientLaunched.wait(2000)
 
-        this.client.breakpointsFromVscode(args.source.path, args.breakpoints)
+        // this.client.breakpointsFromVscode(args.source.path, args.breakpoints)
 
-        const breakpoints = this.client.vscodeBreakPoints.map(l => {
-            const src = new Source(
-                basename(l.filename),
-                this.convertDebuggerPathToClient(l.filename),
-                undefined, undefined, 'dashmips'
-            )
-            return new Breakpoint(true, l.lineno, 0, src)
-        }) as DebugProtocol.Breakpoint[]
+        // const breakpoints = this.client.vscodeBreakPoints.map(l => {
+        //     const src = new Source(
+        //         basename(l.filename),
+        //         this.convertDebuggerPathToClient(l.filename),
+        //         undefined, undefined, 'dashmips'
+        //     )
+        //     return new Breakpoint(true, l.lineno, 0, src)
+        // }) as DebugProtocol.Breakpoint[]
 
-        response.body = {
-            breakpoints
-        }
+        // response.body = {
+        //     breakpoints
+        // }
         this.sendResponse(response)
     }
 
     protected async threadsRequest(response: DebugProtocol.ThreadsResponse) {
         response.body = {
-            threads: [new Thread(0, 'main')]
+            threads: [new Thread(THREAD_ID, THREAD_NAME)]
         }
         this.sendResponse(response)
     }
@@ -178,10 +212,10 @@ export class MipsDebugSession extends LoggingDebugSession {
         const variables: DebugProtocol.Variable[] = []
         // const id = this.variableHandles.get(args.variablesReference);
 
-        for (const regname in this.client.program.registers) {
-            const value = this.client.program.registers[regname]
+        for (const name in this.client.program.registers) {
+            const value = this.client.program.registers[name]
             variables.push({
-                name: regname,
+                name,
                 type: 'integer',
                 value: this.formatRegister(value),
                 variablesReference: 0,
@@ -213,14 +247,10 @@ export class MipsDebugSession extends LoggingDebugSession {
         this.sendResponse(response)
     }
 
-    // protected async reverseContinueRequest(response: DebugProtocol.ReverseContinueResponse, args: DebugProtocol.ReverseContinueArguments) { }
-
     protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
         this.client.step()
         this.sendResponse(response)
     }
-
-    protected async stepBackRequest(response: DebugProtocol.StepBackResponse, args: DebugProtocol.StepBackArguments) { }
 
     protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments) {
 
@@ -246,11 +276,11 @@ export class MipsDebugSession extends LoggingDebugSession {
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
         this.client.stop()
-        process.kill(this.dashmipsPid, 'SIGINT')
+        process.kill(this.dashmipsHandle.body.processId, 'SIGINT')
         this.shutdown()
     }
 
-    static processError = (err: Error) => {
+    static processError = (err: Error, cb?: () => void) => {
         logger.error(`Exception: ${err && err.message ? err.message : ''}`)
         logger.error(err && err.name ? err.name : '')
         logger.error(err && err.stack ? err.stack : '')
@@ -258,7 +288,7 @@ export class MipsDebugSession extends LoggingDebugSession {
         logger.error(err ? err.toString() : '')
         // Wait for 1 second before we die,
         // we need to ensure errors are written to the log file.
-        setTimeout(() => process.exit(-1), 1000)
+        setTimeout(cb ? cb : () => { }, 1000)
     }
 
 }

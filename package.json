@@ -11,14 +11,14 @@
     },
     "icon": "images/dashmips-debugger-icon.png",
     "engines": {
-        "vscode": "^1.27.0"
+        "vscode": "^1.36.0"
     },
     "categories": [
         "Debuggers"
     ],
     "main": "./out/extension",
     "activationEvents": [
-        "onDebug",
+        "onDebugResolve:mips",
         "onLanguage:mips"
     ],
     "contributes": {
@@ -61,6 +61,9 @@
                 "label": "Dashmips",
                 "program": "./out/debugAdapter.js",
                 "runtime": "node",
+                "languages": [
+                    "mips"
+                ],
                 "configurationAttributes": {
                     "launch": {
                         "required": [
@@ -71,16 +74,6 @@
                                 "type": "string",
                                 "description": "Path to mips file with main label",
                                 "default": "${file}"
-                            },
-                            "stopOnEntry": {
-                                "type": "boolean",
-                                "description": "Automatically stop after launch.",
-                                "default": true
-                            },
-                            "log": {
-                                "type": "boolean",
-                                "description": "Enable Dashmips logger",
-                                "default": false
                             },
                             "registerFormat": {
                                 "enum": [
@@ -93,28 +86,34 @@
                                 "description": "Display registers in formats: 'hex' | 'oct' | 'dec' | 'bin'",
                                 "default": "hex"
                             },
-                            "port": {
-                                "type": "number",
-                                "description": "Port that dashmips debugger is running on",
-                                "default": 9999
-                            },
-                            "host": {
-                                "type": "string",
-                                "description": "Host that dashmips debugger is running on",
-                                "default": "localhost"
-                            },
-                            "launchDebugger": {
-                                "type": "boolean",
-                                "description": "Launch dashmips in terminal upon debugging",
-                                "default": true
-                            },
                             "console": {
                                 "enum": [
                                     "integratedTerminal",
                                     "externalTerminal"
                                 ],
-                                "description": "Where to launch the debug target: internal console, integrated terminal, or external terminal.",
+                                "description": "Where to launch the debug target: integrated terminal, or external terminal.",
                                 "default": "integratedTerminal"
+                            },
+                            "args": {
+                                "type": "array",
+                                "description": "Arguments for mips program",
+                                "default": [],
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dashmipsArgs": {
+                                "type": "array",
+                                "description": "Arguments for dashmips debugger",
+                                "default": [],
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dashmipsCommand": {
+                                "type": "string",
+                                "description": "The command used to launch dashmips debugger",
+                                "default": "python -m dashmips debug"
                             }
                         }
                     }
@@ -126,18 +125,15 @@
                         "name": "dashmips (Run Current File)",
                         "program": "${file}",
                         "stopOnEntry": true,
-                        "registerFormat": "dec"
-                    },
-                    {
-                        "type": "dashmips",
-                        "request": "launch",
-                        "name": "dashmips (Attach Current File)",
-                        "program": "${file}",
-                        "stopOnEntry": true,
                         "registerFormat": "dec",
-                        "port": 9999,
-                        "host": "localhost",
-                        "launchDebugger": false
+                        "dashmipsCommand": "python -m dashmips debug",
+                        "dashmipsArgs": [
+                            "-l",
+                            "-i",
+                            "localhost",
+                            "-p",
+                            "2390"
+                        ]
                     }
                 ],
                 "configurationSnippets": [
@@ -150,22 +146,15 @@
                             "name": "dashmips (Run Current File)",
                             "program": "^\"\\${file}\"",
                             "stopOnEntry": true,
-                            "registerFormat": "dec"
-                        }
-                    },
-                    {
-                        "label": "Dashmips Debug: Attach",
-                        "description": "A new configuration for 'debugging' a user selected mips file.",
-                        "body": {
-                            "type": "dashmips",
-                            "request": "launch",
-                            "name": "dashmips (Attach Current File)",
-                            "program": "^\"\\${file}\"",
-                            "stopOnEntry": true,
                             "registerFormat": "dec",
-                            "port": 9999,
-                            "host": "localhost",
-                            "launchDebugger": false
+                            "dashmipsCommand": "python -m dashmips debug",
+                            "dashmipsArgs": [
+                                "-l",
+                                "-i",
+                                "localhost",
+                                "-p",
+                                "2390"
+                            ]
                         }
                     }
                 ]
@@ -173,7 +162,7 @@
         ]
     },
     "scripts": {
-        "publish": "npx vsce publish",
+        "publish": "./node_modules/.bin/vsce publish",
         "vscode:prepublish": "rm -rf ./out && npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
@@ -182,17 +171,19 @@
     },
     "devDependencies": {
         "@types/mocha": "^5.2.7",
-        "@types/node": "^12.0.7",
-        "mocha": "^6.1.4",
-        "npx": "^10.2.0",
-        "tslint": "^5.17.0",
-        "typescript": "^3.5.1",
-        "vsce": "^1.62.0",
-        "vscode": "^1.1.34",
+        "@types/node": "^12.6.8",
+        "@types/websocket": "^0.0.40",
+        "mocha": "^6.2.0",
+        "tslint": "^5.18.0",
+        "typescript": "^3.5.3",
+        "vsce": "^1.66.0",
+        "vscode": "^1.1.36",
         "vscode-debugadapter-testsupport": "^1.35.0"
     },
     "dependencies": {
         "vscode-debugadapter": "^1.35.0",
-        "vscode-debugprotocol": "^1.35.0"
+        "vscode-debugprotocol": "^1.35.0",
+        "vscode-jsonrpc": "^4.0.0",
+        "websocket": "^1.0.29"
     }
 }

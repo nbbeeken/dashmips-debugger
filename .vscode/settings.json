@@ -8,5 +8,13 @@
     "editor.rulers": [
         180
     ],
-    "editor.formatOnSave": true
+    "editor.formatOnSave": true,
+    "cSpell.words": [
+        "dashmips",
+        "debugadapter",
+        "roadkillco"
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    }
 }

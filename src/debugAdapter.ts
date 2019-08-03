@@ -1,4 +1,4 @@
-
+const process = require('process')
 import { MipsDebugSession } from './debug'
 
 process.stdin.on('error', () => { })

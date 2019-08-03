@@ -1,6 +1,7 @@
 'use strict'
 import * as Net from 'net'
 import * as vscode from 'vscode'
+import { execSync } from 'child_process'
 import {
     CancellationToken,
     debug,
@@ -13,10 +14,18 @@ import {
 import { isDashmipsInstalled } from './client'
 import { MipsDebugSession } from './debug'
 
-const EMBED_DEBUG_ADAPTER = false
+const EMBED_DEBUG_ADAPTER = true
 
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
+    try {
+        return await activateUnsafe(context)
+    } catch (ex) {
+        console.error('Failed to activate extension:', ex)
+        throw ex
+    }
+}
 
+async function activateUnsafe(context: vscode.ExtensionContext) {
     if (!isDashmipsInstalled()) {
         vscode.window.showErrorMessage('Install Dashmips with pip?', 'Yes', 'No').then(value => {
             if (value === 'Yes') {
@@ -26,51 +35,104 @@ export function activate(context: vscode.ExtensionContext) {
             }
         })
     }
-
     const provider = new DashmipsConfigurationProvider()
     context.subscriptions.push(debug.registerDebugConfigurationProvider('dashmips', provider))
     context.subscriptions.push(provider)
+
+    if (EMBED_DEBUG_ADAPTER) {
+        const factory = new DashmipsDebugAdapterDescriptorFactory()
+        context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
+        context.subscriptions.push(factory)
+    }
 }
 
 export function deactivate() { }
 
-export class DashmipsConfigurationProvider
-    implements DebugConfigurationProvider {
+export class DashmipsConfigurationProvider implements DebugConfigurationProvider {
 
     private server?: Net.Server
     private terminal?: vscode.Terminal
 
+    // provideDebugConfigurations?(folder?: WorkspaceFolder, token?: CancellationToken): ProviderResult<DebugConfiguration[]> {}
+
     resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
 
-        const logArg = config.log ? '-l' : ''
-
-        if (config.launchDebugger !== false) {
-            this.terminal = vscode.window.createTerminal('Dashmips')
-            this.terminal.sendText(`python -m dashmips debug ${logArg}`, true)
-            this.terminal.show(false)
-        }
+        config.internalConsoleOptions = 'neverOpen'
 
         if (!config.type && !config.request && !config.name) {
+            // No configuration generated yet
             const editor = vscode.window.activeTextEditor
             if (editor && editor.document.languageId === 'mips') {
                 config.type = 'dashmips'
-                config.name = 'Launch Current File'
+                config.name = 'dashmips (Run Current File)'
                 config.request = 'launch'
                 config.program = '${file}'
-                config.stopOnEntry = true
+                config.dashmipsCommand = 'python -m dashmips debug'
             }
         }
 
-        // Debug console not at all useful yet.
-        config.internalConsoleOptions = 'neverOpen'
-
         if (!config.program) {
-            return vscode.window.showInformationMessage(
-                'Cannot find a program to debug'
-            ).then(_ => { return undefined })
+            return vscode.window.showInformationMessage('Cannot find a program to debug').then(() => undefined)
         }
 
-        if (EMBED_DEBUG_ADAPTER) {
+        const defaults = {
+            args: [],
+            console: 'integratedTerminal',
+            dashmipsCommand: 'python -m dashmips debug',
+            name: 'dashmips (Run Current File)',
+        }
+
+        return { ...defaults, ...config } as DebugConfiguration
+    }
+
+    async startDashmipsInstance(folder: WorkspaceFolder, config: DebugConfiguration) {
+        const debuggerCommand = 'python -m dashmips debug'
+
+        // Debug console not at all useful.
+        config.internalConsoleOptions = 'neverOpen'
+
+        if (!config.type && !config.request && !config.name) {
+            // No configuration generated yet
+            const editor = vscode.window.activeTextEditor
+            if (editor && editor.document.languageId === 'mips') {
+                config.type = 'dashmips'
+                config.name = 'dashmips (Run Current File)'
+                config.request = 'launch'
+                config.program = '${file}'
+                config.stopOnEntry = true
+                config.dashmipsCommand = debuggerCommand
+            }
+        }
+
+        if (!config.program) {
+            await vscode.window.showInformationMessage('Cannot find a program to debug')
+            throw Error('No program specified')
+        }
+
+        const debugArgs = [config.dashmipsCommand, ...config.dashmipsArgs, config.program]
+        if (config.args && config.args.length > 0) {
+            // Mips arguments
+            debugArgs.push('-a', ...config.args)
+        }
+
+        return debugArgs.join(' ')
+    }
+
+    dispose() {
+        if (this.server) {
+            this.server.close()
+        }
+    }
+}
+
+export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+
+    private server?: Net.Server
+
+    createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+
+        if (!this.server) {
+            // start listening on a random port
             if (!this.server) {
                 this.server = Net.createServer(socket => {
                     const session = new MipsDebugSession()
@@ -78,14 +140,27 @@ export class DashmipsConfigurationProvider
                     session.start(socket as NodeJS.ReadableStream, socket)
                 }).listen(0)
             }
-            const addr = (this.server.address() as Net.AddressInfo)
-            config.debugServer = addr.port
         }
-        return config
+
+        const addr = (this.server.address() as Net.AddressInfo)
+        // make VS Code connect to debug server
+        return new vscode.DebugAdapterServer(addr.port)
     }
+
     dispose() {
         if (this.server) {
             this.server.close()
         }
+    }
+}
+
+export function checkDashmipsExists(): boolean {
+    try {
+        execSync(
+            'python -m dashmips -v', { encoding: 'utf8' }
+        )
+        return true
+    } catch {
+        return false
     }
 }
