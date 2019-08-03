@@ -36,8 +36,8 @@ export class MipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject()
     private client?: Client
     private variableHandles = new Handles<string>()
-    private dashmipsHandle: DebugProtocol.RunInTerminalResponse
-    private config: LaunchRequestArguments
+    private dashmipsHandle?: DebugProtocol.RunInTerminalResponse
+    private config?: LaunchRequestArguments
     private clientLaunched = new Subject()
 
 
@@ -76,7 +76,7 @@ export class MipsDebugSession extends LoggingDebugSession {
 
         this.client.on(
             'stop', () => {
-                process.kill(this.dashmipsHandle.body.processId, 'SIGTERM')
+                process.kill(this.dashmipsHandle!.body.processId!, 'SIGTERM')
                 this.sendEvent(new TerminatedEvent())
             }
         )
@@ -124,13 +124,13 @@ export class MipsDebugSession extends LoggingDebugSession {
                 args,
             } as DebugProtocol.RunInTerminalRequestArguments
 
-            const termReqHandler = (resp: DebugProtocol.RunInTerminalResponse) => {
+            const termReqHandler = (resp: DebugProtocol.Response | DebugProtocol.RunInTerminalResponse) => {
                 if (!resp.success) {
                     logger.error('Vscode failed to launch dashmips')
                     this.sendEvent(new TerminatedEvent())
                     reject(new Error(`Run In Terminal: ${resp.message}`))
                 }
-                this.dashmipsHandle = resp
+                this.dashmipsHandle = resp as DebugProtocol.RunInTerminalResponse
                 resolve()
             }
             this.sendRequest('runInTerminal', termArgs, 8000, termReqHandler)
@@ -181,7 +181,7 @@ export class MipsDebugSession extends LoggingDebugSession {
 
     protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments) {
         response.body = {
-            stackFrames: this.client.stack.map(f => {
+            stackFrames: this.client!.stack.map(f => {
                 return new StackFrame(f.index, f.name,
                     new Source(
                         basename(f.file),
@@ -190,7 +190,7 @@ export class MipsDebugSession extends LoggingDebugSession {
                     f.line
                 )
             }),
-            totalFrames: this.client.stack.length,
+            totalFrames: this.client!.stack.length,
         }
         this.sendResponse(response)
     }
@@ -212,8 +212,8 @@ export class MipsDebugSession extends LoggingDebugSession {
         const variables: DebugProtocol.Variable[] = []
         // const id = this.variableHandles.get(args.variablesReference);
 
-        for (const name in this.client.program.registers) {
-            const value = this.client.program.registers[name]
+        for (const name in this.client!.program.registers) {
+            const value = this.client!.program.registers[name]
             variables.push({
                 name,
                 type: 'integer',
@@ -229,7 +229,7 @@ export class MipsDebugSession extends LoggingDebugSession {
     }
 
     formatRegister(value: number): string {
-        switch (this.config.registerFormat) {
+        switch (this.config!.registerFormat) {
             case 'hex':
                 return '0x' + value.toString(16).padStart(8, '0')
             case 'oct':
@@ -243,12 +243,12 @@ export class MipsDebugSession extends LoggingDebugSession {
     }
 
     protected async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments) {
-        this.client.continue()
+        this.client!.continue()
         this.sendResponse(response)
     }
 
     protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
-        this.client.step()
+        this.client!.step()
         this.sendResponse(response)
     }
 
@@ -256,12 +256,12 @@ export class MipsDebugSession extends LoggingDebugSession {
 
         let reply = undefined
         if (args.context === 'hover') {
-            if (this.client.program.registers.hasOwnProperty(args.expression)) {
-                const regvalue = this.client.program.registers[args.expression]
+            if (this.client!.program.registers.hasOwnProperty(args.expression)) {
+                const regvalue = this.client!.program.registers[args.expression]
                 reply = regvalue.toString()
             }
-            if (this.client.program.labels.hasOwnProperty(args.expression)) {
-                const label = this.client.program.labels[args.expression]
+            if (this.client!.program.labels.hasOwnProperty(args.expression)) {
+                const label = this.client!.program.labels[args.expression]
                 reply = `${label.value}`
             }
         }
@@ -275,8 +275,8 @@ export class MipsDebugSession extends LoggingDebugSession {
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
-        this.client.stop()
-        process.kill(this.dashmipsHandle.body.processId, 'SIGINT')
+        this.client!.stop()
+        process.kill(this.dashmipsHandle!.body.processId!, 'SIGINT')
         this.shutdown()
     }
 

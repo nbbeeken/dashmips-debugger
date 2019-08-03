@@ -38,7 +38,7 @@ export class Client extends EventEmitter {
         path: string,
         breakpoints: DebugProtocol.SourceBreakpoint[]
     ) {
-        if ((!!this.program) === false) {
+        if (!this.program) {
             return
         }
         for (const vsbp of breakpoints) {
@@ -92,7 +92,7 @@ export class Client extends EventEmitter {
     constructor(program: string, sockOpts?: TcpNetConnectOpts) {
         super()
 
-        this.program = compileMips(program)
+        this.program = compileMips(program)!
         if (this.program === null) {
             throw Error('Mips could not be compiled')
         }
@@ -155,7 +155,7 @@ export class Client extends EventEmitter {
 
     private onMessage = (message: DebugMessage) => {
         this.program = message.program
-        message.breakpoints.map(bp => this.breakpoints.add(bp))
+        message.breakpoints!.map(bp => this.breakpoints.add(bp))
         if (message.error) {
             this.emit('error', message)
         } else {
