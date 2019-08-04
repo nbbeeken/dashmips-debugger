@@ -7,7 +7,6 @@ import { DebugProtocol } from 'vscode-debugprotocol'
 
 import { Subject } from './subject'
 import { basename, dirname } from 'path'
-import { Client } from './client'
 import { DebugMessage } from './models'
 import { client as WebSocket, connection as Connection } from 'websocket'
 import * as jayson from 'jayson'
@@ -34,9 +33,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     dashmipsCommand: string
 }
 
-export class MipsDebugSession extends LoggingDebugSession {
+export class DashmipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject()
-    private client?: Client
     private variableHandles = new Handles<string>()
     private dashmipsHandle?: DebugProtocol.RunInTerminalResponse
     private config?: LaunchRequestArguments
@@ -133,7 +131,7 @@ export class MipsDebugSession extends LoggingDebugSession {
             })
             this.ws.connect(`ws://${'localhost'}:${2390}`)
         } catch (ex) {
-            MipsDebugSession.processError(ex, () => {
+            DashmipsDebugSession.processError(ex, () => {
                 this.sendErrorResponse(response, ex)
                 this.sendEvent(new TerminatedEvent())
             })
