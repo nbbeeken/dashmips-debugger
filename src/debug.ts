@@ -15,6 +15,7 @@ const DEBUG_LOGS = true
 export const THREAD_ID = 0
 export const THREAD_NAME = 'main'
 
+type DebuggerMethods = 'start' | 'step' | 'continue' | 'stop'
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** Identifier */
@@ -73,7 +74,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     private async requestTerminalLaunch(launchArgs: LaunchRequestArguments): Promise<string | void> {
-        // This will never reject, since vscode is weird with long running proceses
+        // This will never reject, since vscode is weird with long running processes
         // We will detect failure to launch when we are unable to connect to ws
         return new Promise(resolve => {
             const args = [...launchArgs.dashmipsCommand.split(' '), ...launchArgs.dashmipsArgs, launchArgs.program]
@@ -103,7 +104,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
-    private async callDebuggerMethod(method: 'start' | 'step' | 'continue' | 'stop', params: any[] = []) {
+    private async callDebuggerMethod(method: DebuggerMethods, params: any[] = []) {
         return new Promise((resolve, reject) => {
             if (!this.wsConnection) {
                 return reject(new Error('Cannot send with no connection'))
@@ -121,7 +122,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
-        await this.requestTerminalLaunch(args) // alwawys succeeds
+        await this.requestTerminalLaunch(args) // always succeeds
         try {
             this.ws.once('connect', async (connection: Connection) => {
                 this.wsConnection = connection
@@ -139,7 +140,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
-        this.clientLaunched.wait(2500)
+        await this.clientLaunched.wait(10500)
         if (!args.breakpoints) {
             return this.sendResponse(response)
         }
@@ -169,51 +170,33 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments) {
-        response.body = {
-            stackFrames: this.client!.stack.map(f => {
-                return new StackFrame(f.index, f.name,
-                    new Source(
-                        basename(f.file),
-                        this.convertDebuggerPathToClient(f.file),
-                        undefined, undefined, 'dashmips-adapter-data'),
-                    f.line
-                )
-            }),
-            totalFrames: this.client!.stack.length,
-        }
+        // response.body = {
+        //     stackFrames: this.client!.stack.map(f => {
+        //         return new StackFrame(f.index, f.name,
+        //             new Source(
+        //                 basename(f.file),
+        //                 this.convertDebuggerPathToClient(f.file),
+        //                 undefined, undefined, 'dashmips-adapter-data'),
+        //             f.line
+        //         )
+        //     }),
+        //     totalFrames: this.client!.stack.length,
+        // }
         this.sendResponse(response)
     }
 
     protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments) {
-
         const scopes: Scope[] = []
         scopes.push(new Scope(
             'Registers',
             this.variableHandles.create('register'),
             false
         ))
-
         response.body = { scopes }
         this.sendResponse(response)
     }
 
     protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments) {
-        const variables: DebugProtocol.Variable[] = []
-        // const id = this.variableHandles.get(args.variablesReference);
-
-        for (const name in this.client!.program.registers) {
-            const value = this.client!.program.registers[name]
-            variables.push({
-                name,
-                type: 'integer',
-                value: this.formatRegister(value),
-                variablesReference: 0,
-            } as DebugProtocol.Variable)
-        }
-
-        response.body = {
-            variables
-        }
         this.sendResponse(response)
     }
 
@@ -232,39 +215,18 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments) {
-        this.client!.continue()
         this.sendResponse(response)
     }
 
     protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
-        this.client!.step()
         this.sendResponse(response)
     }
 
     protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments) {
-
-        let reply = undefined
-        if (args.context === 'hover') {
-            if (this.client!.program.registers.hasOwnProperty(args.expression)) {
-                const regvalue = this.client!.program.registers[args.expression]
-                reply = regvalue.toString()
-            }
-            if (this.client!.program.labels.hasOwnProperty(args.expression)) {
-                const label = this.client!.program.labels[args.expression]
-                reply = `${label.value}`
-            }
-        }
-
-        response.body = {
-            result: reply ?
-                reply : `eval(ctx: '${args.context}', '${args.expression}')`,
-            variablesReference: 0
-        }
         this.sendResponse(response)
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
-        this.client!.stop()
         process.kill(this.dashmipsHandle!.body.processId!, 'SIGINT')
         this.shutdown()
     }

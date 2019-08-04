@@ -11,8 +11,7 @@ import {
     WorkspaceFolder
 } from 'vscode'
 
-import { isDashmipsInstalled } from './client'
-import { MipsDebugSession } from './debug'
+import { DashmipsDebugSession } from './debug'
 
 const EMBED_DEBUG_ADAPTER = true
 
@@ -26,7 +25,7 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 async function activateUnsafe(context: vscode.ExtensionContext) {
-    if (!isDashmipsInstalled()) {
+    if (!checkDashmipsExists()) {
         vscode.window.showErrorMessage('Install Dashmips with pip?', 'Yes', 'No').then(value => {
             if (value === 'Yes') {
                 const term = vscode.window.createTerminal('Install Dashmips')
@@ -100,7 +99,7 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
         if (!this.server) {
             // start listening on a random port
             this.server = Net.createServer(socket => {
-                const session = new MipsDebugSession()
+                const session = new DashmipsDebugSession()
                 session.setRunAsServer(true)
                 session.start(socket as NodeJS.ReadableStream, socket)
             }).listen(0)
