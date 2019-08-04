@@ -68,11 +68,11 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
             }
         }
 
-        if (!config.program) {
+        if (config.request === 'launch' && !config.program) {
             return vscode.window.showInformationMessage('Cannot find a program to debug').then(() => undefined)
         }
 
-        const defaults = {
+        const launchDefaults = {
             args: [],
             dashmipsArgs: [],
             console: 'integratedTerminal',
@@ -80,7 +80,12 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
             name: 'dashmips (Run Current File)',
         }
 
-        return { ...defaults, ...config } as DebugConfiguration
+        const attachDefaults = {
+            host: 'localhost',
+            port: 2390,
+        }
+
+        return { ...(config.request === 'launch' ? launchDefaults : attachDefaults), ...config } as DebugConfiguration
     }
 
     dispose() {

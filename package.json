@@ -116,6 +116,35 @@
                                 "default": "python -m dashmips debug"
                             }
                         }
+                    },
+                    "attach": {
+                        "required": [
+                            "host",
+                            "port"
+                        ],
+                        "properties": {
+                            "host": {
+                                "type": "string",
+                                "description": "Host dashmips is running on",
+                                "default": "localhost"
+                            },
+                            "port": {
+                                "type": "number",
+                                "description": "Port dashmips is running on",
+                                "default": 2390
+                            },
+                            "registerFormat": {
+                                "enum": [
+                                    "hex",
+                                    "bin",
+                                    "oct",
+                                    "dec"
+                                ],
+                                "type": "string",
+                                "description": "Display registers in formats: 'hex' | 'oct' | 'dec' | 'bin'",
+                                "default": "hex"
+                            }
+                        }
                     }
                 },
                 "initialConfigurations": [
@@ -134,6 +163,13 @@
                             "-p",
                             "2390"
                         ]
+                    },
+                    {
+                        "type": "dashmips",
+                        "request": "attach",
+                        "name": "dashmips (Attach)",
+                        "registerFormat": "dec",
+                        "port": 2390
                     }
                 ],
                 "configurationSnippets": [
@@ -181,7 +217,6 @@
         "vscode-debugadapter-testsupport": "^1.35.0"
     },
     "dependencies": {
-        "jayson": "^3.0.2",
         "vscode-debugadapter": "^1.35.0",
         "vscode-debugprotocol": "^1.35.0",
         "websocket": "^1.0.29"

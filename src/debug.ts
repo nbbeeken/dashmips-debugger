@@ -34,6 +34,11 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     dashmipsCommand: string
 }
 
+interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
+    host: string
+    port: number
+}
+
 export class DashmipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject()
     private variableHandles = new Handles<string>()
@@ -94,7 +99,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             const termReqHandler = (resp: DebugProtocol.Response | DebugProtocol.RunInTerminalResponse) => {
                 this.dashmipsHandle = resp as DebugProtocol.RunInTerminalResponse
                 if (!resp.success) {
-                    logger.error('Vscode failed to launch dashmips')
+                    logger.error('vscode failed to launch dashmips')
                     this.sendEvent(new TerminatedEvent())
                     return resolve('timeout')
                 }
@@ -121,16 +126,25 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
+    private async connectToDashmips(host: string, port: number) {
+        return new Promise((resolve, reject) => {
+            this.ws.once('connect', async (connection: Connection) => {
+                this.wsConnection = connection
+                await this.callDebuggerMethod('start')
+                this.wsConnection.on('close', () => this.shutdown())
+                this.wsConnection.on('error', () => this.shutdown())
+                this.clientLaunched.notify()
+                resolve()
+            })
+            this.ws.connect(`ws://${host}:${port}`)
+        })
+    }
+
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         await this.requestTerminalLaunch(args) // always succeeds
         try {
-            this.ws.once('connect', async (connection: Connection) => {
-                this.wsConnection = connection
-                const r = await this.callDebuggerMethod('start')
-                this.clientLaunched.notify()
-                this.sendResponse(response)
-            })
-            this.ws.connect(`ws://${'localhost'}:${2390}`)
+            await this.connectToDashmips('localhost', 2390)
+            this.sendResponse(response)
         } catch (ex) {
             DashmipsDebugSession.processError(ex, () => {
                 this.sendErrorResponse(response, ex)
@@ -139,8 +153,14 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         }
     }
 
+    protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
+        await this.connectToDashmips(args.host, args.port)
+        this.sendResponse(response)
+    }
+
     protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
-        await this.clientLaunched.wait(10500)
+        await this.clientLaunched.wait(Infinity)
+
         if (!args.breakpoints) {
             return this.sendResponse(response)
         }
