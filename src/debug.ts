@@ -6,10 +6,10 @@ import {
 import { DebugProtocol } from 'vscode-debugprotocol'
 
 import { Subject } from './subject'
-import { basename, dirname } from 'path'
-import { DebugMessage } from './models'
+import { basename } from 'path'
+import { SourceLine } from './models'
 import { client as WebSocket, connection as Connection } from 'websocket'
-import * as jayson from 'jayson'
+import { ratio } from 'fuzzball'
 
 const DEBUG_LOGS = true
 export const THREAD_ID = 0
@@ -39,15 +39,34 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
     port: number
 }
 
+interface DashmipsHandle {
+    pid: number
+    source: SourceLine[]
+    pc: number
+}
+
 export class DashmipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject()
     private variableHandles = new Handles<string>()
-    private dashmipsHandle?: DebugProtocol.RunInTerminalResponse
+    private dashmipsHandle?: DashmipsHandle
     private config?: LaunchRequestArguments
     private clientLaunched = new Subject()
     private ws: WebSocket
     private wsConnection?: Connection
     private id: number
+
+    private get currentLine() {
+        return this.dashmipsHandle!.source[0]
+    }
+
+    private get stack() {
+        return [{
+            index: THREAD_ID,
+            name: THREAD_NAME,
+            file: this.currentLine.filename,
+            line: this.currentLine.lineno
+        }]
+    }
 
     private set loggingEnabled(value: boolean) {
         logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
@@ -97,7 +116,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             } as DebugProtocol.RunInTerminalRequestArguments
 
             const termReqHandler = (resp: DebugProtocol.Response | DebugProtocol.RunInTerminalResponse) => {
-                this.dashmipsHandle = resp as DebugProtocol.RunInTerminalResponse
                 if (!resp.success) {
                     logger.error('vscode failed to launch dashmips')
                     this.sendEvent(new TerminatedEvent())
@@ -109,7 +127,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
-    private async callDebuggerMethod(method: DebuggerMethods, params: any[] = []) {
+    private async callDebuggerMethod(method: DebuggerMethods, params: any[] = []): Promise<unknown> {
         return new Promise((resolve, reject) => {
             if (!this.wsConnection) {
                 return reject(new Error('Cannot send with no connection'))
@@ -117,12 +135,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.wsConnection.on('message', data => {
                 return resolve(JSON.parse(data.utf8Data!))
             })
-            this.wsConnection.send(JSON.stringify({
-                method,
-                params,
-                jsonrpc: '2.0',
-                id: (this.id++),
-            }))
+            this.wsConnection.send(JSON.stringify({ method, params }))
         })
     }
 
@@ -130,8 +143,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         return new Promise((resolve, reject) => {
             this.ws.once('connect', async (connection: Connection) => {
                 this.wsConnection = connection
-                await this.callDebuggerMethod('start')
-                this.wsConnection.on('close', () => this.shutdown())
+                this.dashmipsHandle = await this.callDebuggerMethod('start') as DashmipsHandle
+                this.wsConnection.on('close', () => {
+                    this.shutdown()
+                    this.sendEvent(new TerminatedEvent())
+                })
                 this.wsConnection.on('error', () => this.shutdown())
                 this.clientLaunched.notify()
                 resolve()
@@ -165,19 +181,27 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             return this.sendResponse(response)
         }
 
-        const breakpoints = args.breakpoints.map(bp => ({
-            src: new Source(
-                basename(args.source.path!),
-                this.convertDebuggerPathToClient(args.source.path!),
-                undefined, undefined, 'dashmips'
-            ),
-            ...bp
-        })).map(bp => new Breakpoint(true, bp.line, bp.column, bp.src))
+        const breakpoints = args.breakpoints.map(bp => {
+            const path = this.convertDebuggerPathToClient(args.source.path!)
+            const srcLineIdx = this.dashmipsHandle!.source.findIndex(
+                srcLine => ratio(srcLine.filename, path) > 98 && srcLine.lineno === bp.line
+            )
+            return {
+                src: new Source(
+                    basename(args.source.path!), path,
+                    undefined, undefined, srcLineIdx
+                ),
+                srcLineIdx,
+                ...bp
+            }
+        })
 
-        const res = await this.callDebuggerMethod('continue', breakpoints)
-
+        const res = await this.callDebuggerMethod('continue', breakpoints) as { stopped: SourceLine }
+        if ('stopped' in res) {
+            this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+        }
         response.body = {
-            breakpoints
+            breakpoints: breakpoints.map(bp => new Breakpoint(bp.srcLineIdx !== -1, bp.line, bp.column, bp.src))
         }
         return this.sendResponse(response)
     }
@@ -190,18 +214,18 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments) {
-        // response.body = {
-        //     stackFrames: this.client!.stack.map(f => {
-        //         return new StackFrame(f.index, f.name,
-        //             new Source(
-        //                 basename(f.file),
-        //                 this.convertDebuggerPathToClient(f.file),
-        //                 undefined, undefined, 'dashmips-adapter-data'),
-        //             f.line
-        //         )
-        //     }),
-        //     totalFrames: this.client!.stack.length,
-        // }
+        response.body = {
+            stackFrames: this.stack.map(f => {
+                return new StackFrame(f.index, f.name,
+                    new Source(
+                        basename(f.file),
+                        this.convertDebuggerPathToClient(f.file),
+                        undefined, undefined, 'dashmips-adapter-data'),
+                    f.line
+                )
+            }),
+            totalFrames: this.stack.length,
+        }
         this.sendResponse(response)
     }
 
@@ -247,7 +271,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
-        process.kill(this.dashmipsHandle!.body.processId!, 'SIGINT')
+        process.kill(this.dashmipsHandle!.pid, 'SIGINT')
         this.shutdown()
     }
 
