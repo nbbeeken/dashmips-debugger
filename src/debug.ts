@@ -7,7 +7,7 @@ import { DebugProtocol } from 'vscode-debugprotocol'
 
 import { Subject } from './subject'
 import { basename } from 'path'
-import { SourceLine } from './models'
+import { SourceLine, MipsProgram } from './models'
 import { client as WebSocket, connection as Connection } from 'websocket'
 import { ratio } from 'fuzzball'
 
@@ -15,7 +15,7 @@ const DEBUG_LOGS = true
 export const THREAD_ID = 0
 export const THREAD_NAME = 'main'
 
-type DebuggerMethods = 'start' | 'step' | 'continue' | 'stop'
+type DebuggerMethods = 'start' | 'step' | 'continue' | 'stop' | 'info'
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** Identifier */
@@ -41,14 +41,13 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 
 interface DashmipsHandle {
     pid: number
-    source: SourceLine[]
-    pc: number
 }
 
 export class DashmipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject()
     private variableHandles = new Handles<string>()
-    private dashmipsHandle?: DashmipsHandle
+    private dashmipsPid: number = -1
+    private program?: MipsProgram
     private config?: LaunchRequestArguments
     private clientLaunched = new Subject()
     private ws: WebSocket
@@ -56,7 +55,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private id: number
 
     private get currentLine() {
-        return this.dashmipsHandle!.source[0]
+        return this.program!.source[this.program!.registers['pc']]
     }
 
     private get stack() {
@@ -127,7 +126,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
-    private async callDebuggerMethod(method: DebuggerMethods, params: any[] = []): Promise<unknown> {
+    private async callDebuggerMethod(method: 'info', params?: any[]): Promise<{ result: { program: MipsProgram } }>
+    private async callDebuggerMethod(method: 'start', params?: any[]): Promise<{ result: { pid: number } }>
+    private async callDebuggerMethod(method: 'continue', params?: any[]): Promise<{ result: { stopped: boolean } | { exited: boolean } }>
+    private async callDebuggerMethod(method: DebuggerMethods, params?: any[]): Promise<{ result: unknown }> {
+        params = params ? params : []
         return new Promise((resolve, reject) => {
             if (!this.wsConnection) {
                 return reject(new Error('Cannot send with no connection'))
@@ -143,7 +146,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         return new Promise((resolve, reject) => {
             this.ws.once('connect', async (connection: Connection) => {
                 this.wsConnection = connection
-                this.dashmipsHandle = await this.callDebuggerMethod('start') as DashmipsHandle
+                this.dashmipsPid = (await this.callDebuggerMethod('start')).result.pid
                 this.wsConnection.on('close', () => {
                     this.shutdown()
                     this.sendEvent(new TerminatedEvent())
@@ -183,25 +186,23 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         const breakpoints = args.breakpoints.map(bp => {
             const path = this.convertDebuggerPathToClient(args.source.path!)
-            const srcLineIdx = this.dashmipsHandle!.source.findIndex(
-                srcLine => ratio(srcLine.filename, path) > 98 && srcLine.lineno === bp.line
-            )
             return {
                 src: new Source(
-                    basename(args.source.path!), path,
-                    undefined, undefined, srcLineIdx
+                    basename(path), path, undefined, undefined, 'dashmips'
                 ),
-                srcLineIdx,
                 ...bp
             }
         })
 
-        const res = await this.callDebuggerMethod('continue', breakpoints) as { stopped: SourceLine }
-        if ('stopped' in res) {
+        const { result } = (await this.callDebuggerMethod('continue', breakpoints))
+        if ('stopped' in result) {
             this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
         }
+        if ('exited' in result) {
+            this.sendEvent(new TerminatedEvent())
+        }
         response.body = {
-            breakpoints: breakpoints.map(bp => new Breakpoint(bp.srcLineIdx !== -1, bp.line, bp.column, bp.src))
+            breakpoints: breakpoints.map(bp => new Breakpoint(true, bp.line, bp.column, bp.src))
         }
         return this.sendResponse(response)
     }
@@ -241,6 +242,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments) {
+        const info = (await this.callDebuggerMethod('info') as any).result as MipsProgram
+        logger.log(JSON.stringify(info, undefined, 4))
         this.sendResponse(response)
     }
 
@@ -259,6 +262,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments) {
+        await this.callDebuggerMethod('continue')
         this.sendResponse(response)
     }
 
@@ -271,7 +275,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
-        process.kill(this.dashmipsHandle!.pid, 'SIGINT')
+        if (this.dashmipsPid > 1) {
+            process.kill(this.dashmipsPid, 'SIGINT')
+        }
         this.shutdown()
     }
 
