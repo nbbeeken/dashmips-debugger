@@ -1,15 +1,9 @@
-import {
-    LoggingDebugSession, InitializedEvent, logger, Logger,
-    Breakpoint, StoppedEvent, Thread,
-    Source, Scope, Handles, StackFrame, TerminatedEvent,
-} from 'vscode-debugadapter'
-import { DebugProtocol } from 'vscode-debugprotocol'
-
-import { Subject } from './subject'
 import { basename } from 'path'
-import { SourceLine, MipsProgram } from './models'
+import { Breakpoint, Handles, InitializedEvent, logger, Logger, LoggingDebugSession, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread } from 'vscode-debugadapter'
+import { DebugProtocol } from 'vscode-debugprotocol'
 import { client as WebSocket, connection as Connection } from 'websocket'
-import { ratio } from 'fuzzball'
+import { ContinueRPCReturn, InfoRPCReturn, RPCReturn, StartRPCReturn, MipsProgram, StepRPCReturn } from './models'
+import { Subject } from './subject'
 
 const DEBUG_LOGS = true
 export const THREAD_ID = 0
@@ -39,32 +33,36 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
     port: number
 }
 
-interface DashmipsHandle {
-    pid: number
+type MyBreakpoint = {
+    line: number
+    src: Source
+    column?: number
+    condition?: string
+    hitCondition?: string
+    logMessage?: string
 }
 
 export class DashmipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject()
     private variableHandles = new Handles<string>()
+    private breakpoints: MyBreakpoint[] = []
+    private isFirstBreakpointSetCall = true
     private dashmipsPid: number = -1
-    private program?: MipsProgram
-    private config?: LaunchRequestArguments
     private clientLaunched = new Subject()
     private ws: WebSocket
+    private config?: LaunchRequestArguments | AttachRequestArguments | any
     private wsConnection?: Connection
-    private id: number
 
-    private get currentLine() {
-        return this.program!.source[this.program!.registers['pc']]
+    private get program(): Promise<MipsProgram> {
+        const programPromise = new Promise<MipsProgram>((resolve, reject) => {
+            this.callDebuggerMethod('info').then(({ result }) => resolve(result.program)).catch(reject)
+        })
+        return programPromise
     }
 
-    private get stack() {
-        return [{
-            index: THREAD_ID,
-            name: THREAD_NAME,
-            file: this.currentLine.filename,
-            line: this.currentLine.lineno
-        }]
+    private async getCurrentLine() {
+        const program = await this.program
+        return program.source[program.registers['pc']]
     }
 
     private set loggingEnabled(value: boolean) {
@@ -77,7 +75,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.setDebuggerColumnsStartAt1(false)
         this.loggingEnabled = DEBUG_LOGS
         this.ws = new WebSocket()
-        this.id = 1
     }
 
     protected async initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments) {
@@ -117,7 +114,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             const termReqHandler = (resp: DebugProtocol.Response | DebugProtocol.RunInTerminalResponse) => {
                 if (!resp.success) {
                     logger.error('vscode failed to launch dashmips')
-                    this.sendEvent(new TerminatedEvent())
+                    this.requestTermination()
                     return resolve('timeout')
                 }
                 resolve()
@@ -126,16 +123,17 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
-    private async callDebuggerMethod(method: 'info', params?: any[]): Promise<{ result: { program: MipsProgram } }>
-    private async callDebuggerMethod(method: 'start', params?: any[]): Promise<{ result: { pid: number } }>
-    private async callDebuggerMethod(method: 'continue', params?: any[]): Promise<{ result: { stopped: boolean } | { exited: boolean } }>
-    private async callDebuggerMethod(method: DebuggerMethods, params?: any[]): Promise<{ result: unknown }> {
+    private async callDebuggerMethod(method: 'info', params?: any[]): Promise<InfoRPCReturn>
+    private async callDebuggerMethod(method: 'start', params?: any[]): Promise<StartRPCReturn>
+    private async callDebuggerMethod(method: 'step', params?: any[]): Promise<StepRPCReturn>
+    private async callDebuggerMethod(method: 'continue', params?: any[]): Promise<ContinueRPCReturn>
+    private async callDebuggerMethod(method: DebuggerMethods, params?: any[]): Promise<RPCReturn> {
         params = params ? params : []
         return new Promise((resolve, reject) => {
             if (!this.wsConnection) {
                 return reject(new Error('Cannot send with no connection'))
             }
-            this.wsConnection.on('message', data => {
+            this.wsConnection.once('message', data => {
                 return resolve(JSON.parse(data.utf8Data!))
             })
             this.wsConnection.send(JSON.stringify({ method, params }))
@@ -147,11 +145,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.ws.once('connect', async (connection: Connection) => {
                 this.wsConnection = connection
                 this.dashmipsPid = (await this.callDebuggerMethod('start')).result.pid
-                this.wsConnection.on('close', () => {
-                    this.shutdown()
-                    this.sendEvent(new TerminatedEvent())
-                })
-                this.wsConnection.on('error', () => this.shutdown())
+                this.wsConnection.on('close', this.requestTermination)
+                this.wsConnection.on('error', this.requestTermination)
+                this.wsConnection.on('error', reject)
                 this.clientLaunched.notify()
                 resolve()
             })
@@ -160,6 +156,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
+        this.config = args
         await this.requestTerminalLaunch(args) // always succeeds
         try {
             await this.connectToDashmips('localhost', 2390)
@@ -167,12 +164,13 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         } catch (ex) {
             DashmipsDebugSession.processError(ex, () => {
                 this.sendErrorResponse(response, ex)
-                this.sendEvent(new TerminatedEvent())
+                this.requestTermination()
             })
         }
     }
 
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
+        this.config = args
         await this.connectToDashmips(args.host, args.port)
         this.sendResponse(response)
     }
@@ -184,7 +182,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             return this.sendResponse(response)
         }
 
-        const breakpoints = args.breakpoints.map(bp => {
+        this.breakpoints = args.breakpoints.map(bp => {
             const path = this.convertDebuggerPathToClient(args.source.path!)
             return {
                 src: new Source(
@@ -194,15 +192,28 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             }
         })
 
-        const { result } = (await this.callDebuggerMethod('continue', breakpoints))
-        if ('stopped' in result) {
-            this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+
+        if (this.isFirstBreakpointSetCall) {
+            // On the first breakpoint set call we run until the breakpoints set
+            // subsequent calls should not 'continue' the program
+            const { result } = (await this.callDebuggerMethod('continue', this.breakpoints))
+            if ('stopped' in result) {
+                this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+                response.body = {
+                    breakpoints: this.breakpoints.map(bp => new Breakpoint(
+                        result.breakpoints.includes(bp.line), bp.line, bp.column, bp.src
+                    ))
+                }
+                return this.sendResponse(response)
+            }
+            if ('exited' in result) {
+                this.requestTermination()
+            }
+            this.isFirstBreakpointSetCall = false
         }
-        if ('exited' in result) {
-            this.sendEvent(new TerminatedEvent())
-        }
+
         response.body = {
-            breakpoints: breakpoints.map(bp => new Breakpoint(true, bp.line, bp.column, bp.src))
+            breakpoints: this.breakpoints.map(bp => new Breakpoint(true, bp.line, bp.column, bp.src))
         }
         return this.sendResponse(response)
     }
@@ -215,8 +226,15 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments) {
+        const currentLine = await this.getCurrentLine()
+        const stack = [{
+            index: THREAD_ID,
+            name: THREAD_NAME,
+            file: currentLine.filename,
+            line: currentLine.lineno
+        }]
         response.body = {
-            stackFrames: this.stack.map(f => {
+            stackFrames: stack.map(f => {
                 return new StackFrame(f.index, f.name,
                     new Source(
                         basename(f.file),
@@ -225,7 +243,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                     f.line
                 )
             }),
-            totalFrames: this.stack.length,
+            totalFrames: stack.length,
         }
         this.sendResponse(response)
     }
@@ -241,37 +259,90 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.sendResponse(response)
     }
 
-    protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments) {
-        const info = (await this.callDebuggerMethod('info') as any).result as MipsProgram
-        logger.log(JSON.stringify(info, undefined, 4))
-        this.sendResponse(response)
-    }
-
-    formatRegister(value: number): string {
-        switch (this.config!.registerFormat) {
-            case 'hex':
-                return '0x' + value.toString(16).padStart(8, '0')
+    private formatRegister(value: number): string {
+        switch (this.config!.registerFormat || 'hex') {
             case 'oct':
                 return '0o' + value.toString(8).padStart(11, '0')
             case 'bin':
                 return '0b' + value.toString(2).padStart(32, '0')
             case 'dec':
-            default:
                 return value.toString(10).padStart(10, '0')
+            case 'hex':
+            default:
+                return '0x' + value.toString(16).padStart(8, '0')
         }
     }
 
+    protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments) {
+        const program = await this.program
+        if (!program) {
+            return this.sendErrorResponse(response, 0)
+        }
+
+        const variables: DebugProtocol.Variable[] = []
+        for (const registerName in program.registers) {
+            const value = program.registers[registerName]
+            variables.push({
+                name: registerName,
+                type: 'integer',
+                value: this.formatRegister(value),
+                variablesReference: 0,
+            } as DebugProtocol.Variable)
+        }
+        response.body = {
+            variables
+        }
+        this.sendResponse(response)
+    }
+
     protected async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments) {
-        await this.callDebuggerMethod('continue')
+        const { result } = (await this.callDebuggerMethod('continue', this.breakpoints))
+        if ('stopped' in result) {
+            this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+        }
+        if ('exited' in result) {
+            this.requestTermination()
+        }
         this.sendResponse(response)
     }
 
     protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
+        const { result } = await this.callDebuggerMethod('step')
+        if ('stopped' in result) {
+            this.sendEvent(new StoppedEvent('step', THREAD_ID))
+        }
+        if ('exited' in result) {
+            this.requestTermination()
+        }
         this.sendResponse(response)
     }
 
-    protected evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments) {
+    protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments) {
+        const program = await this.program
+        let reply = undefined
+        if (args.context === 'hover') {
+            if (program.registers.hasOwnProperty(args.expression)) {
+                const registerValue = program.registers[args.expression]
+                reply = this.formatRegister(registerValue)
+            }
+            if (program.labels.hasOwnProperty(args.expression)) {
+                const label = program.labels[args.expression]
+                reply = `${label.value}`
+            }
+        }
+
+        response.body = {
+            result: reply ?
+                reply : `eval(ctx: '${args.context}', '${args.expression}')`,
+            variablesReference: 0
+        }
         this.sendResponse(response)
+    }
+
+    private requestTermination = (error?: Error) => {
+        logger.error('termination requested from within for:')
+        logger.error(error ? error.toString() : '')
+        this.sendEvent(new TerminatedEvent())
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {

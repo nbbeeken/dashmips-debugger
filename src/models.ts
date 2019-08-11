@@ -15,7 +15,7 @@ export interface MipsProgram {
     labels: { [name: string]: Label }
     source: SourceLine[]
     memory: string
-    registers: { [regname: string]: number }
+    registers: { [registerName: string]: number }
 }
 
 export interface DebugMessage {
@@ -24,4 +24,33 @@ export interface DebugMessage {
     breakpoints?: number[]
     message?: string
     error?: boolean
+}
+
+export interface RPCReturn {
+    result: unknown
+}
+
+export interface StartRPCReturn extends RPCReturn {
+    result: { pid: number }
+}
+
+export interface ContinueRPCReturn extends RPCReturn {
+    result: {
+        stopped: boolean
+        breakpoints: number[]
+    } | {
+        exited: boolean
+    }
+}
+
+export interface StepRPCReturn {
+    result: {
+        stopped: boolean
+    } | {
+        exited: boolean
+    }
+}
+
+export interface InfoRPCReturn extends RPCReturn {
+    result: { program: MipsProgram }
 }
