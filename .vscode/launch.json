@@ -17,7 +17,7 @@
                 "${workspaceFolder}/out/**/*.js"
             ],
             "env": {
-                "PYTHONPATH": "D:\\Dev\\dashmips\\src"
+                "PYTHONPATH": "D:\\Dev\\dashmips"
             },
             "preLaunchTask": "watch"
         },

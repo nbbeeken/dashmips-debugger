@@ -11,7 +11,7 @@ export class Subject {
         let self = this
         let waiter = {} as IWaiter
         this.waiters.push(waiter)
-        let promise = new Promise(resolve => {
+        let promise = new Promise<void>(resolve => {
             let resolved = false
             waiter.resolve = (noRemove?: boolean) => {
                 if (resolved) {

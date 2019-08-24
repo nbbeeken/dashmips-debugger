@@ -52,5 +52,23 @@ export interface StepRPCReturn {
 }
 
 export interface InfoRPCReturn extends RPCReturn {
-    result: { program: MipsProgram }
+    program: MipsProgram
+}
+
+export type DebuggerMethods = 'start' | 'step' | 'continue' | 'stop' | 'info' | 'verify_breakpoints'
+
+export interface DashmipsResponse {
+    method: DebuggerMethods
+    result?: any
+    error?: any
+}
+
+export interface DashmipsBreakpointInfo {
+    id: number,
+    path: string
+    line: number
+    column?: number
+    condition?: string
+    hitCondition?: string
+    logMessage?: string
 }
