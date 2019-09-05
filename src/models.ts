@@ -14,7 +14,11 @@ export interface MipsProgram {
     name: string
     labels: { [name: string]: Label }
     source: SourceLine[]
-    memory: string
+    memory: {
+        stack: string
+        heap: string
+        data: string
+    }
     registers: { [registerName: string]: number }
 }
 

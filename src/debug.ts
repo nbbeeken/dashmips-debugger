@@ -119,22 +119,19 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             } as DashmipsBreakpointInfo
         })
 
+        await this.client.ready()
         this.client.call('verify_breakpoints', this.breakpoints)
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, _]) => {
-            vscodeBreakpoints.map(bp => {
-                this.sendEvent(new BreakpointEvent('changed', { verified: true, id: bp.id } as Breakpoint))
-            })
+            response.body = {
+                breakpoints: vscodeBreakpoints.map((bp, idx) => new Breakpoint(
+                    false,
+                    bp.line,
+                    bp.column,
+                    new Source(basename(bp.path), bp.path, idx, undefined, 'dashmips'),
+                ))
+            }
+            return this.sendResponse(response)
         })
-
-        response.body = {
-            breakpoints: this.breakpoints.map((bp, idx) => new Breakpoint(
-                false,
-                bp.line,
-                bp.column,
-                new Source(basename(bp.path), bp.path, idx, undefined, 'dashmips'),
-            ))
-        }
-        return this.sendResponse(response)
     }
 
     protected async threadsRequest(response: DebugProtocol.ThreadsResponse) {
@@ -176,6 +173,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             'Registers',
             this.variableHandles.create('register'),
             false
+        ), new Scope(
+            'Memory',
+            this.variableHandles.create('memory'),
+            false
         ))
         response.body = { scopes }
         this.sendResponse(response)
@@ -208,6 +209,14 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                     variablesReference: 0,
                 } as DebugProtocol.Variable)
             }
+            program.memory.stack.split('\n').forEach((row, idx) => {
+                variables.push({
+                    name: idx.toString(16),
+                    type: 'string',
+                    value: row,
+                    variablesReference: 0
+                } as DebugProtocol.Variable)
+            })
             response.body = {
                 variables
             }
