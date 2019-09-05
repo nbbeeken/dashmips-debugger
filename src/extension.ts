@@ -24,7 +24,8 @@ export async function activate(context: vscode.ExtensionContext) {
 }
 
 async function activateUnsafe(context: vscode.ExtensionContext) {
-    if (!checkDashmipsExists()) {
+    const pleaseCheckDashmipsExists = vscode.workspace.getConfiguration().get('dashmips.checkDashmipsExists')
+    if (pleaseCheckDashmipsExists && !checkDashmipsExists()) {
         vscode.window.showErrorMessage('Install Dashmips with pip?', 'Yes', 'No').then(value => {
             if (value === 'Yes') {
                 const term = vscode.window.createTerminal('Install Dashmips')

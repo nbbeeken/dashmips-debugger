@@ -22,6 +22,18 @@
         "onLanguage:mips"
     ],
     "contributes": {
+        "configuration": [
+            {
+                "title": "Dashmips Debugger",
+                "properties": {
+                    "dashmips.checkDashmipsExists": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Check to see if dashmips is installed, will offer to install if not"
+                    }
+                }
+            }
+        ],
         "languages": [
             {
                 "id": "mips",
