@@ -22,6 +22,14 @@ const DEBUG_LOGS = true
 export const THREAD_ID = 0
 export const THREAD_NAME = 'main'
 
+const enum VARIABLE_REF {
+    _, // no zero
+    REGISTERS,
+    MEMORY_STACK,
+    MEMORY_HEAP,
+    MEMORY_DATA,
+}
+
 type DebuggerMethods = 'start' | 'step' | 'continue' | 'stop' | 'info'
 
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
@@ -203,8 +211,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments) {
         const scopes: Scope[] = []
         scopes.push(
-            new Scope('Registers', this.variableHandles.create('register'), false),
-            new Scope('stack', this.variableHandles.create('stack'), false)
+            new Scope('Registers', VARIABLE_REF.REGISTERS, false),
+            new Scope('Memory: stack', VARIABLE_REF.MEMORY_STACK, false),
+            new Scope('Memory: heap', VARIABLE_REF.MEMORY_HEAP, false),
+            new Scope('Memory: data', VARIABLE_REF.MEMORY_DATA, false)
         )
         response.body = { scopes }
         this.sendResponse(response)
@@ -228,26 +238,47 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         response: DebugProtocol.VariablesResponse,
         args: DebugProtocol.VariablesArguments
     ) {
+        const makeMemoryRowIntoVariable = (row: string): DebugProtocol.Variable => {
+            const [index] = row.split('  ', 1)
+            const rest = row.substring(index.length).trimLeft()
+            return {
+                name: index,
+                type: 'string',
+                value: rest,
+                variablesReference: 0,
+            }
+        }
         this.client.call('info')
         this.client.once('info', ({ program }) => {
             const variables: DebugProtocol.Variable[] = []
-            for (const registerName in program.registers) {
-                const value = program.registers[registerName]
-                variables.push({
-                    name: registerName,
-                    type: 'integer',
-                    value: this.formatRegister(value),
-                    variablesReference: 0,
-                } as DebugProtocol.Variable)
+            const variablesReference = args.variablesReference as VARIABLE_REF
+            switch (variablesReference) {
+                case VARIABLE_REF.REGISTERS: {
+                    for (const registerName in program.registers) {
+                        const value = program.registers[registerName]
+                        variables.push({
+                            name: registerName,
+                            type: 'integer',
+                            value: this.formatRegister(value),
+                            variablesReference: 0,
+                        } as DebugProtocol.Variable)
+                    }
+                    break
+                }
+                case VARIABLE_REF.MEMORY_STACK: {
+                    variables.push(...program.memory.stack.split('\n').map(makeMemoryRowIntoVariable))
+                    break
+                }
+                case VARIABLE_REF.MEMORY_HEAP: {
+                    variables.push(...program.memory.heap.split('\n').map(makeMemoryRowIntoVariable))
+                    break
+                }
+                case VARIABLE_REF.MEMORY_DATA: {
+                    variables.push(...program.memory.data.split('\n').map(makeMemoryRowIntoVariable))
+                    break
+                }
             }
-            program.memory.stack.split('\n').forEach((row, idx) => {
-                variables.push({
-                    name: idx.toString(16),
-                    type: 'string',
-                    value: row,
-                    variablesReference: 0,
-                } as DebugProtocol.Variable)
-            })
+
             response.body = {
                 variables,
             }
