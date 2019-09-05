@@ -13,12 +13,13 @@ suite('Dashmips Debug Adapter', () => {
 
     suite('basic', () => {
         test('unknown request should produce error', done => {
-            dc.send('illegal_request').then(() => {
-                done(new Error('does not report error on unknown request'))
-            }).catch(() => {
-                done()
-            })
+            dc.send('illegal_request')
+                .then(() => {
+                    done(new Error('does not report error on unknown request'))
+                })
+                .catch(() => {
+                    done()
+                })
         })
     })
-
 })

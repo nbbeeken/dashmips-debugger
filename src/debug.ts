@@ -1,11 +1,22 @@
-import { createHash } from 'crypto'
-import { basename } from 'path'
-import { Breakpoint, Handles, InitializedEvent, logger, Logger, LoggingDebugSession, Scope, Source, StackFrame, StoppedEvent, TerminatedEvent, Thread, BreakpointEvent } from 'vscode-debugadapter'
-import { DebugProtocol } from 'vscode-debugprotocol'
-import { client as WebSocket, connection as Connection } from 'websocket'
-import { ContinueRPCReturn, InfoRPCReturn, RPCReturn, StartRPCReturn, MipsProgram, StepRPCReturn, DashmipsBreakpointInfo } from './models'
-import { Subject } from './subject'
+import {
+    Breakpoint,
+    Handles,
+    InitializedEvent,
+    Logger,
+    LoggingDebugSession,
+    Scope,
+    Source,
+    StackFrame,
+    StoppedEvent,
+    TerminatedEvent,
+    Thread,
+    logger,
+} from 'vscode-debugadapter'
 import { DashmipsDebugClient, buildTerminalLaunchRequestParams } from './dashmips'
+import { basename } from 'path'
+import { DebugProtocol } from 'vscode-debugprotocol'
+import { DashmipsBreakpointInfo } from './models'
+import { Subject } from './subject'
 
 const DEBUG_LOGS = true
 export const THREAD_ID = 0
@@ -64,7 +75,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
-    protected async initializeRequest(response: DebugProtocol.InitializeResponse, args: DebugProtocol.InitializeRequestArguments) {
+    protected async initializeRequest(
+        response: DebugProtocol.InitializeResponse,
+        args: DebugProtocol.InitializeRequestArguments
+    ) {
         response.body = response.body || {}
         response.body.supportsConfigurationDoneRequest = true
         response.body.supportsEvaluateForHovers = true
@@ -74,7 +88,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.sendEvent(new InitializedEvent())
     }
 
-    protected async configurationDoneRequest(response: DebugProtocol.ConfigurationDoneResponse, args: DebugProtocol.ConfigurationDoneArguments) {
+    protected async configurationDoneRequest(
+        response: DebugProtocol.ConfigurationDoneResponse,
+        args: DebugProtocol.ConfigurationDoneArguments
+    ) {
         super.configurationDoneRequest(response, args)
         // notify the launchRequest that configuration has finished
         this.configurationDone.notify()
@@ -105,7 +122,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.sendResponse(response)
     }
 
-    protected async setBreakPointsRequest(response: DebugProtocol.SetBreakpointsResponse, args: DebugProtocol.SetBreakpointsArguments) {
+    protected async setBreakPointsRequest(
+        response: DebugProtocol.SetBreakpointsResponse,
+        args: DebugProtocol.SetBreakpointsArguments
+    ) {
         if (!args.breakpoints) {
             return this.sendResponse(response)
         }
@@ -123,12 +143,15 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.client.call('verify_breakpoints', this.breakpoints)
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, _]) => {
             response.body = {
-                breakpoints: vscodeBreakpoints.map((bp, idx) => new Breakpoint(
-                    false,
-                    bp.line,
-                    bp.column,
-                    new Source(basename(bp.path), bp.path, idx, undefined, 'dashmips'),
-                ))
+                breakpoints: vscodeBreakpoints.map(
+                    (bp, idx) =>
+                        new Breakpoint(
+                            false,
+                            bp.line,
+                            bp.column,
+                            new Source(basename(bp.path), bp.path, idx, undefined, 'dashmips')
+                        )
+                ),
             }
             return this.sendResponse(response)
         })
@@ -136,28 +159,38 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async threadsRequest(response: DebugProtocol.ThreadsResponse) {
         response.body = {
-            threads: [new Thread(THREAD_ID, THREAD_NAME)]
+            threads: [new Thread(THREAD_ID, THREAD_NAME)],
         }
         this.sendResponse(response)
     }
 
-    protected async stackTraceRequest(response: DebugProtocol.StackTraceResponse, args: DebugProtocol.StackTraceArguments) {
+    protected async stackTraceRequest(
+        response: DebugProtocol.StackTraceResponse,
+        args: DebugProtocol.StackTraceArguments
+    ) {
         this.client.call('info')
         this.client.once('info', ({ program }) => {
             const currentLine = program.source[program.registers['pc']]
-            const stack = [{
-                index: THREAD_ID,
-                name: THREAD_NAME,
-                file: currentLine.filename,
-                line: currentLine.lineno
-            }]
+            const stack = [
+                {
+                    index: THREAD_ID,
+                    name: THREAD_NAME,
+                    file: currentLine.filename,
+                    line: currentLine.lineno,
+                },
+            ]
             response.body = {
                 stackFrames: stack.map(f => {
-                    return new StackFrame(f.index, f.name,
+                    return new StackFrame(
+                        f.index,
+                        f.name,
                         new Source(
                             basename(f.file),
                             this.convertDebuggerPathToClient(f.file),
-                            undefined, undefined, 'dashmips-adapter-data'),
+                            undefined,
+                            undefined,
+                            'dashmips-adapter-data'
+                        ),
                         f.line
                     )
                 }),
@@ -169,15 +202,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async scopesRequest(response: DebugProtocol.ScopesResponse, args: DebugProtocol.ScopesArguments) {
         const scopes: Scope[] = []
-        scopes.push(new Scope(
-            'Registers',
-            this.variableHandles.create('register'),
-            false
-        ), new Scope(
-            'Memory',
-            this.variableHandles.create('memory'),
-            false
-        ))
+        scopes.push(
+            new Scope('Registers', this.variableHandles.create('register'), false),
+            new Scope('stack', this.variableHandles.create('stack'), false)
+        )
         response.body = { scopes }
         this.sendResponse(response)
     }
@@ -196,7 +224,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         }
     }
 
-    protected async variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments) {
+    protected async variablesRequest(
+        response: DebugProtocol.VariablesResponse,
+        args: DebugProtocol.VariablesArguments
+    ) {
         this.client.call('info')
         this.client.once('info', ({ program }) => {
             const variables: DebugProtocol.Variable[] = []
@@ -214,11 +245,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                     name: idx.toString(16),
                     type: 'string',
                     value: row,
-                    variablesReference: 0
+                    variablesReference: 0,
                 } as DebugProtocol.Variable)
             })
             response.body = {
-                variables
+                variables,
             }
             this.sendResponse(response)
         })
@@ -236,21 +267,22 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments) {
         this.client.call('info')
+        const hasOwnProperty = (obj: any, prop: string) => Object.prototype.hasOwnProperty.call(obj, prop)
         this.client.once('info', ({ program }) => {
             let reply = undefined
             if (args.context === 'hover') {
-                if (program.registers.hasOwnProperty(args.expression)) {
+                if (hasOwnProperty(program.registers, args.expression)) {
                     const registerValue = program.registers[args.expression]
                     reply = this.formatRegister(registerValue)
                 }
-                if (program.labels.hasOwnProperty(args.expression)) {
+                if (hasOwnProperty(program.labels, args.expression)) {
                     const label = program.labels[args.expression]
                     reply = `${label.value}`
                 }
             }
             response.body = {
                 result: reply ? reply : `eval(ctx: '${args.context}', '${args.expression}')`,
-                variablesReference: 0
+                variablesReference: 0,
             }
             this.sendResponse(response)
         })
@@ -277,7 +309,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         logger.error(err ? err.toString() : '')
         // Wait for 1 second before we die,
         // we need to ensure errors are written to the log file.
-        setTimeout(cb ? cb : () => { }, 1000)
+        setTimeout(cb ? cb : () => {}, 1000)
     }
-
 }

@@ -39,20 +39,11 @@ export interface StartRPCReturn extends RPCReturn {
 }
 
 export interface ContinueRPCReturn extends RPCReturn {
-    result: {
-        stopped: boolean
-        breakpoints: number[]
-    } | {
-        exited: boolean
-    }
+    result: { stopped: boolean; breakpoints: number[] } | { exited: boolean }
 }
 
 export interface StepRPCReturn {
-    result: {
-        stopped: boolean
-    } | {
-        exited: boolean
-    }
+    result: { stopped: boolean } | { exited: boolean }
 }
 
 export interface InfoRPCReturn extends RPCReturn {
@@ -68,7 +59,7 @@ export interface DashmipsResponse {
 }
 
 export interface DashmipsBreakpointInfo {
-    id: number,
+    id: number
     path: string
     line: number
     column?: number

@@ -1,10 +1,8 @@
+import { connection as Connection, IMessage as Message, client as WebSocket } from 'websocket'
+import { DashmipsBreakpointInfo, DashmipsResponse, DebuggerMethods, InfoRPCReturn } from './models'
 import { EventEmitter } from 'events'
-
 import { logger } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
-
-import { client as WebSocket, connection as Connection, IMessage as Message } from 'websocket'
-import { DebuggerMethods, DashmipsResponse, DashmipsBreakpointInfo, MipsProgram, InfoRPCReturn } from './models'
 import { Subject } from './subject'
 
 export interface DashmipsDebugClient {
@@ -26,7 +24,6 @@ export interface DashmipsDebugClient {
 }
 
 export class DashmipsDebugClient extends EventEmitter {
-
     public dashmipsPid: number = -1
     private websocket: WebSocket
     private url!: string
@@ -86,11 +83,13 @@ export class DashmipsDebugClient extends EventEmitter {
         params = params ? params : []
         this.connection.send(JSON.stringify({ method, params }))
     }
-
-
 }
 
-type BuildTermParams = [DebugProtocol.RunInTerminalRequestArguments, number, (response: DebugProtocol.RunInTerminalResponse) => void]
+type BuildTermParams = [
+    DebugProtocol.RunInTerminalRequestArguments,
+    number,
+    (response: DebugProtocol.RunInTerminalResponse) => void
+]
 export function buildTerminalLaunchRequestParams(launchArgs: any): BuildTermParams {
     // This will never reject, since vscode is weird with long running processes
     // We will detect failure to launch when we are unable to connect to ws
@@ -100,7 +99,7 @@ export function buildTerminalLaunchRequestParams(launchArgs: any): BuildTermPara
         args.push('-a', ...launchArgs.args)
     }
 
-    const kind = launchArgs.console.slice(0, -('Terminal'.length))
+    const kind = launchArgs.console.slice(0, -'Terminal'.length)
 
     const termArgs = {
         title: 'Dashmips',

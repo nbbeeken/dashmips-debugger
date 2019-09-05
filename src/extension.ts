@@ -1,16 +1,15 @@
 'use strict'
 import * as Net from 'net'
 import * as vscode from 'vscode'
-import { execSync } from 'child_process'
 import {
     CancellationToken,
-    debug,
     DebugConfiguration,
     DebugConfigurationProvider,
     ProviderResult,
-    WorkspaceFolder
+    WorkspaceFolder,
+    debug,
 } from 'vscode'
-
+import { execSync } from 'child_process'
 import { DashmipsDebugSession } from './debug'
 
 const EMBED_DEBUG_ADAPTER = true
@@ -45,15 +44,17 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     }
 }
 
-export function deactivate() { }
+export function deactivate() {}
 
 export class DashmipsConfigurationProvider implements DebugConfigurationProvider {
-
     private server?: Net.Server
     private terminal?: vscode.Terminal
 
-    resolveDebugConfiguration(folder: WorkspaceFolder | undefined, config: DebugConfiguration, token?: CancellationToken): ProviderResult<DebugConfiguration> {
-
+    resolveDebugConfiguration(
+        folder: WorkspaceFolder | undefined,
+        config: DebugConfiguration,
+        token?: CancellationToken
+    ): ProviderResult<DebugConfiguration> {
         config.internalConsoleOptions = 'neverOpen'
 
         if (!config.type && !config.request && !config.name) {
@@ -96,11 +97,12 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
 }
 
 export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
-
     private server?: Net.Server
 
-    createDebugAdapterDescriptor(session: vscode.DebugSession, executable: vscode.DebugAdapterExecutable | undefined): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
-
+    createDebugAdapterDescriptor(
+        session: vscode.DebugSession,
+        executable: vscode.DebugAdapterExecutable | undefined
+    ): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
         if (!this.server) {
             // start listening on a random port
             this.server = Net.createServer(socket => {
@@ -110,7 +112,7 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
             }).listen(0)
         }
 
-        const addr = (this.server.address() as Net.AddressInfo)
+        const addr = this.server.address() as Net.AddressInfo
         // make VS Code connect to debug server
         return new vscode.DebugAdapterServer(addr.port)
     }
@@ -124,9 +126,7 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
 
 export function checkDashmipsExists(): boolean {
     try {
-        execSync(
-            'python -m dashmips -v', { encoding: 'utf8' }
-        )
+        execSync('python -m dashmips -v', { encoding: 'utf8' })
         return true
     } catch {
         return false

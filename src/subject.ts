@@ -1,4 +1,3 @@
-
 interface IWaiter {
     timeout: NodeJS.Timer | null
     resolve: (noRemove?: boolean) => void
@@ -8,10 +7,10 @@ export class Subject {
     private waiters: IWaiter[] = []
 
     public wait(timeout: number) {
-        let self = this
-        let waiter = {} as IWaiter
+        const self = this
+        const waiter = {} as IWaiter
         this.waiters.push(waiter)
-        let promise = new Promise<void>(resolve => {
+        const promise = new Promise<void>(resolve => {
             let resolved = false
             waiter.resolve = (noRemove?: boolean) => {
                 if (resolved) {
@@ -23,7 +22,7 @@ export class Subject {
                     waiter.timeout = null
                 }
                 if (!noRemove) {
-                    let pos = self.waiters.indexOf(waiter)
+                    const pos = self.waiters.indexOf(waiter)
                     if (pos > -1) {
                         self.waiters.splice(pos, 1)
                     }
@@ -32,7 +31,7 @@ export class Subject {
             }
         })
         if (timeout > 0 && isFinite(timeout)) {
-            waiter.timeout = setTimeout(function () {
+            waiter.timeout = setTimeout(function() {
                 waiter.timeout = null
                 waiter.resolve()
             }, timeout)
