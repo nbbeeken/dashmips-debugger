@@ -1,10 +1,10 @@
+const process = require('process')
+import { DashmipsDebugSession } from './debug'
 
-import { MipsDebugSession } from './debug'
+process.stdin.on('error', () => {})
+process.stdout.on('error', () => {})
+process.stderr.on('error', () => {})
 
-process.stdin.on('error', () => { })
-process.stdout.on('error', () => { })
-process.stderr.on('error', () => { })
+process.on('uncaughtException', DashmipsDebugSession.processError)
 
-process.on('uncaughtException', MipsDebugSession.processError)
-
-MipsDebugSession.run(MipsDebugSession)
+DashmipsDebugSession.run(DashmipsDebugSession)

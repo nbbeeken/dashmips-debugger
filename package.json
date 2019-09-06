@@ -2,7 +2,7 @@
     "name": "dashmips-debugger",
     "displayName": "dashmips-debugger",
     "description": "Debugs mips while executing in Dashmips interpreter",
-    "version": "0.0.11",
+    "version": "0.1.1",
     "license": "MIT",
     "publisher": "roadkillco",
     "repository": {
@@ -11,17 +11,29 @@
     },
     "icon": "images/dashmips-debugger-icon.png",
     "engines": {
-        "vscode": "^1.27.0"
+        "vscode": "^1.36.0"
     },
     "categories": [
         "Debuggers"
     ],
     "main": "./out/extension",
     "activationEvents": [
-        "onDebug",
+        "onDebugResolve:mips",
         "onLanguage:mips"
     ],
     "contributes": {
+        "configuration": [
+            {
+                "title": "Dashmips Debugger",
+                "properties": {
+                    "dashmips.checkDashmipsExists": {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "Check to see if dashmips is installed, will offer to install if not"
+                    }
+                }
+            }
+        ],
         "languages": [
             {
                 "id": "mips",
@@ -61,6 +73,9 @@
                 "label": "Dashmips",
                 "program": "./out/debugAdapter.js",
                 "runtime": "node",
+                "languages": [
+                    "mips"
+                ],
                 "configurationAttributes": {
                     "launch": {
                         "required": [
@@ -71,16 +86,6 @@
                                 "type": "string",
                                 "description": "Path to mips file with main label",
                                 "default": "${file}"
-                            },
-                            "stopOnEntry": {
-                                "type": "boolean",
-                                "description": "Automatically stop after launch.",
-                                "default": true
-                            },
-                            "log": {
-                                "type": "boolean",
-                                "description": "Enable Dashmips logger",
-                                "default": false
                             },
                             "registerFormat": {
                                 "enum": [
@@ -93,28 +98,63 @@
                                 "description": "Display registers in formats: 'hex' | 'oct' | 'dec' | 'bin'",
                                 "default": "hex"
                             },
-                            "port": {
-                                "type": "number",
-                                "description": "Port that dashmips debugger is running on",
-                                "default": 9999
-                            },
-                            "host": {
-                                "type": "string",
-                                "description": "Host that dashmips debugger is running on",
-                                "default": "localhost"
-                            },
-                            "launchDebugger": {
-                                "type": "boolean",
-                                "description": "Launch dashmips in terminal upon debugging",
-                                "default": true
-                            },
                             "console": {
                                 "enum": [
                                     "integratedTerminal",
                                     "externalTerminal"
                                 ],
-                                "description": "Where to launch the debug target: internal console, integrated terminal, or external terminal.",
+                                "description": "Where to launch the debug target: integrated terminal, or external terminal.",
                                 "default": "integratedTerminal"
+                            },
+                            "args": {
+                                "type": "array",
+                                "description": "Arguments for mips program",
+                                "default": [],
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dashmipsArgs": {
+                                "type": "array",
+                                "description": "Arguments for dashmips debugger",
+                                "default": [],
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "dashmipsCommand": {
+                                "type": "string",
+                                "description": "The command used to launch dashmips debugger",
+                                "default": "python -m dashmips debug"
+                            }
+                        }
+                    },
+                    "attach": {
+                        "required": [
+                            "host",
+                            "port"
+                        ],
+                        "properties": {
+                            "host": {
+                                "type": "string",
+                                "description": "Host dashmips is running on",
+                                "default": "localhost"
+                            },
+                            "port": {
+                                "type": "number",
+                                "description": "Port dashmips is running on",
+                                "default": 2390
+                            },
+                            "registerFormat": {
+                                "enum": [
+                                    "hex",
+                                    "bin",
+                                    "oct",
+                                    "dec"
+                                ],
+                                "type": "string",
+                                "description": "Display registers in formats: 'hex' | 'oct' | 'dec' | 'bin'",
+                                "default": "hex"
                             }
                         }
                     }
@@ -126,18 +166,22 @@
                         "name": "dashmips (Run Current File)",
                         "program": "${file}",
                         "stopOnEntry": true,
-                        "registerFormat": "dec"
+                        "registerFormat": "dec",
+                        "dashmipsCommand": "python -m dashmips debug",
+                        "dashmipsArgs": [
+                            "-l",
+                            "-i",
+                            "localhost",
+                            "-p",
+                            "2390"
+                        ]
                     },
                     {
                         "type": "dashmips",
-                        "request": "launch",
-                        "name": "dashmips (Attach Current File)",
-                        "program": "${file}",
-                        "stopOnEntry": true,
+                        "request": "attach",
+                        "name": "dashmips (Attach)",
                         "registerFormat": "dec",
-                        "port": 9999,
-                        "host": "localhost",
-                        "launchDebugger": false
+                        "port": 2390
                     }
                 ],
                 "configurationSnippets": [
@@ -150,22 +194,15 @@
                             "name": "dashmips (Run Current File)",
                             "program": "^\"\\${file}\"",
                             "stopOnEntry": true,
-                            "registerFormat": "dec"
-                        }
-                    },
-                    {
-                        "label": "Dashmips Debug: Attach",
-                        "description": "A new configuration for 'debugging' a user selected mips file.",
-                        "body": {
-                            "type": "dashmips",
-                            "request": "launch",
-                            "name": "dashmips (Attach Current File)",
-                            "program": "^\"\\${file}\"",
-                            "stopOnEntry": true,
                             "registerFormat": "dec",
-                            "port": 9999,
-                            "host": "localhost",
-                            "launchDebugger": false
+                            "dashmipsCommand": "python -m dashmips debug",
+                            "dashmipsArgs": [
+                                "-l",
+                                "-i",
+                                "localhost",
+                                "-p",
+                                "2390"
+                            ]
                         }
                     }
                 ]
@@ -173,26 +210,35 @@
         ]
     },
     "scripts": {
-        "publish": "npx vsce publish",
+        "publish": "./node_modules/.bin/vsce publish",
         "vscode:prepublish": "rm -rf ./out && npm run compile",
         "compile": "tsc -p ./",
         "watch": "tsc -watch -p ./",
         "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "mocha -u tdd ./out/tests/"
+        "test": "mocha -u tdd ./out/tests/",
+        "lint": "eslint --fix src/**/*.ts"
     },
     "devDependencies": {
         "@types/mocha": "^5.2.7",
-        "@types/node": "^12.0.7",
-        "mocha": "^6.1.4",
-        "npx": "^10.2.0",
-        "tslint": "^5.17.0",
-        "typescript": "^3.5.1",
-        "vsce": "^1.62.0",
-        "vscode": "^1.1.34",
+        "@types/node": "^12.6.8",
+        "@types/websocket": "^0.0.40",
+        "@typescript-eslint/eslint-plugin": "^2.1.0",
+        "@typescript-eslint/parser": "^2.1.0",
+        "eslint": "^6.3.0",
+        "eslint-plugin-prettier": "^3.1.0",
+        "mocha": "^6.2.0",
+        "prettier": "1.18.2",
+        "rimraf": "^3.0.0",
+        "tslint": "^5.18.0",
+        "typescript": "^3.5.3",
+        "vsce": "^1.66.0",
+        "vscode": "^1.1.36",
         "vscode-debugadapter-testsupport": "^1.35.0"
     },
     "dependencies": {
+        "fuzzball": "^1.3.0",
         "vscode-debugadapter": "^1.35.0",
-        "vscode-debugprotocol": "^1.35.0"
+        "vscode-debugprotocol": "^1.35.0",
+        "websocket": "^1.0.29"
     }
 }

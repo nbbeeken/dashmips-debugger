@@ -5,8 +5,14 @@
     "search.exclude": {
         "out": true // set this to false to include "out" folder in search results
     },
-    "editor.rulers": [
-        180
-    ],
-    "editor.formatOnSave": true
+    "editor.rulers": [180],
+    "editor.formatOnSave": true,
+    "cSpell.words": ["dashmips", "debugadapter", "roadkillco"],
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    },
+    "prettier.tabWidth": 4,
+    "prettier.singleQuote": true,
+    "prettier.printWidth": 180,
+    "prettier.semi": false
 }
