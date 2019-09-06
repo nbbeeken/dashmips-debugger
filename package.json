@@ -222,7 +222,7 @@
     "devDependencies": {
         "@types/mocha": "^5.2.7",
         "@types/node": "^12.6.8",
-        "@types/websocket": "^0.0.40",
+        "@types/ws": "^6.0.3",
         "@typescript-eslint/eslint-plugin": "^2.1.0",
         "@typescript-eslint/parser": "^2.1.0",
         "eslint": "^6.3.0",
@@ -244,6 +244,6 @@
         "utf-8-validate": "^5.0.2",
         "vscode-debugadapter": "^1.35.0",
         "vscode-debugprotocol": "^1.35.0",
-        "websocket": "^1.0.29"
+        "ws": "^7.1.2"
     }
 }

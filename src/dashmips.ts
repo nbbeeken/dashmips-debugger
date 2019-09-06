@@ -1,4 +1,4 @@
-import { connection as Connection, IMessage as Message, client as WebSocket } from 'websocket'
+import * as WebSocket from 'ws'
 import { DashmipsBreakpointInfo, DashmipsResponse, DebuggerMethods, InfoRPCReturn } from './models'
 import { EventEmitter } from 'events'
 import { logger } from 'vscode-debugadapter'
@@ -25,28 +25,25 @@ export interface DashmipsDebugClient {
 
 export class DashmipsDebugClient extends EventEmitter {
     public dashmipsPid: number = -1
-    private websocket: WebSocket
+    private websocket!: WebSocket
     private url!: string
-    private connection!: Connection
 
     private _readyNotifier = new Subject()
 
     constructor() {
         super()
-        this.websocket = new WebSocket()
     }
 
     connect(url: string) {
         this.url = url
-        this.websocket.on('connect', this.onConnect)
-        this.websocket.connect(this.url, undefined, undefined, undefined, { timeout: 0 })
+        this.websocket = new WebSocket(this.url, { handshakeTimeout: 0 })
+        this.websocket.on('open', this.onOpen)
     }
 
-    private onConnect = (connection: Connection) => {
-        this.connection = connection
-        this.connection.on('message', this.onMessage)
-        this.connection.on('close', this.onError)
-        this.connection.on('error', this.onError)
+    private onOpen = () => {
+        this.websocket.on('message', this.onMessage)
+        this.websocket.on('close', this.onError)
+        this.websocket.on('error', this.onError)
         this._readyNotifier.notify()
     }
 
@@ -54,8 +51,8 @@ export class DashmipsDebugClient extends EventEmitter {
         this.emit('error', error)
     }
 
-    private onMessage = (message: Message) => {
-        const response: DashmipsResponse = JSON.parse(message.utf8Data!)
+    private onMessage = (message: string) => {
+        const response: DashmipsResponse = JSON.parse(message)
         if (response.error) {
             this.emit('error', response.error)
         }
@@ -81,7 +78,7 @@ export class DashmipsDebugClient extends EventEmitter {
     public call(method: 'verify_breakpoints', params: DashmipsBreakpointInfo[]): void
     public call(method: DebuggerMethods, params?: any[]): void {
         params = params ? params : []
-        this.connection.send(JSON.stringify({ method, params }))
+        this.websocket.send(JSON.stringify({ method, params }))
     }
 }
 
