@@ -7,7 +7,14 @@
     },
     "editor.rulers": [180],
     "editor.formatOnSave": true,
-    "cSpell.words": ["dashmips", "debugadapter", "roadkillco"],
+    "cSpell.words": [
+        "bufferutil",
+        "dashmips",
+        "debugadapter",
+        "devtool",
+        "roadkillco",
+        "vsce"
+    ],
     "editor.codeActionsOnSave": {
         "source.fixAll": true
     },

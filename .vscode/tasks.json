@@ -4,10 +4,10 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "watch",
+            "label": "dev",
             "type": "shell",
-            "command": "yarn run watch",
-            "problemMatcher": "$tsc-watch",
+            "command": "yarn run dev",
+            "problemMatcher": ["$tsc-watch"],
             "isBackground": true,
             "presentation": {
                 "reveal": "never"
