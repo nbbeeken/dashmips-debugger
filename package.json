@@ -2,7 +2,7 @@
     "name": "dashmips-debugger",
     "displayName": "dashmips-debugger",
     "description": "Debugs mips while executing in Dashmips interpreter",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "license": "MIT",
     "publisher": "roadkillco",
     "repository": {
@@ -165,7 +165,6 @@
                         "request": "launch",
                         "name": "dashmips (Run Current File)",
                         "program": "${file}",
-                        "stopOnEntry": true,
                         "registerFormat": "dec",
                         "dashmipsCommand": "python -m dashmips debug",
                         "dashmipsArgs": [
@@ -193,7 +192,6 @@
                             "request": "launch",
                             "name": "dashmips (Run Current File)",
                             "program": "^\"\\${file}\"",
-                            "stopOnEntry": true,
                             "registerFormat": "dec",
                             "dashmipsCommand": "python -m dashmips debug",
                             "dashmipsArgs": [
