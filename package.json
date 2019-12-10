@@ -219,29 +219,29 @@
     },
     "devDependencies": {
         "@types/mocha": "^5.2.7",
-        "@types/node": "^12.6.8",
-        "@types/ws": "^6.0.3",
-        "@typescript-eslint/eslint-plugin": "^2.1.0",
-        "@typescript-eslint/parser": "^2.1.0",
-        "eslint": "^6.3.0",
-        "eslint-plugin-prettier": "^3.1.0",
-        "mocha": "^6.2.0",
+        "@types/node": "^12.12.16",
+        "@types/ws": "^6.0.4",
+        "@typescript-eslint/eslint-plugin": "^2.11.0",
+        "@typescript-eslint/parser": "^2.11.0",
+        "eslint": "^6.7.2",
+        "eslint-plugin-prettier": "^3.1.1",
+        "mocha": "^6.2.2",
         "prettier": "1.18.2",
         "rimraf": "^3.0.0",
-        "ts-loader": "^6.0.4",
-        "tslint": "^5.18.0",
-        "typescript": "^3.5.3",
-        "vsce": "^1.66.0",
+        "ts-loader": "^6.2.1",
+        "tslint": "^5.20.1",
+        "typescript": "^3.7.3",
+        "vsce": "^1.71.0",
         "vscode": "^1.1.36",
-        "vscode-debugadapter-testsupport": "^1.35.0",
-        "webpack": "^4.39.3",
-        "webpack-cli": "^3.3.8"
+        "vscode-debugadapter-testsupport": "^1.40.0",
+        "webpack": "^4.41.2",
+        "webpack-cli": "^3.3.10"
     },
     "dependencies": {
         "bufferutil": "^4.0.1",
         "utf-8-validate": "^5.0.2",
-        "vscode-debugadapter": "^1.35.0",
-        "vscode-debugprotocol": "^1.35.0",
-        "ws": "^7.1.2"
+        "vscode-debugadapter": "^1.37.1",
+        "vscode-debugprotocol": "^1.37.0",
+        "ws": "^7.2.0"
     }
 }
