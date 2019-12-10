@@ -208,7 +208,7 @@
         ]
     },
     "scripts": {
-        "vscode:prepublish": "rimraf ./out && webpack --mode production",
+        "vscode:prepublish": "rimraf ./dist && npx webpack --mode production",
         "build": "webpack --mode production",
         "dev": "webpack --mode development --watch",
         "publish": "npx vsce publish",

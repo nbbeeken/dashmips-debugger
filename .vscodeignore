@@ -4,6 +4,12 @@ dist/test/**
 dist/**/*.map
 src/**
 .gitignore
+.gitattributes
+.eslintrc.js
+yarn.lock
+prettier.config.js
+demo/
 tsconfig.json
 vsc-extension-quickstart.md
 tslint.json
+node_modules
