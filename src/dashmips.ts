@@ -1,4 +1,4 @@
-import * as WebSocket from 'ws'
+import { Socket } from 'net'
 import { DashmipsBreakpointInfo, DashmipsResponse, DebuggerMethods, InfoRPCReturn } from './models'
 import { EventEmitter } from 'events'
 import { logger } from 'vscode-debugadapter'
@@ -25,7 +25,7 @@ export interface DashmipsDebugClient {
 
 export class DashmipsDebugClient extends EventEmitter {
     public dashmipsPid: number = -1
-    private websocket!: WebSocket
+    private socket!: Socket
     private url!: string
 
     private _readyNotifier = new Subject()
@@ -34,16 +34,17 @@ export class DashmipsDebugClient extends EventEmitter {
         super()
     }
 
-    connect(url: string) {
-        this.url = url
-        this.websocket = new WebSocket(this.url, { handshakeTimeout: 0 })
-        this.websocket.on('open', this.onOpen)
+    connect(host: string, port: number) {
+        this.socket = new Socket()
+        this.socket.on('connect', this.onOpen)
+        this.socket.setEncoding('utf8');
+        this.socket.connect({ port, host })
     }
 
     private onOpen = () => {
-        this.websocket.on('message', this.onMessage)
-        this.websocket.on('close', this.onError)
-        this.websocket.on('error', this.onError)
+        this.socket.on('data', this.onMessage)
+        this.socket.on('close', this.onError)
+        this.socket.on('error', this.onError)
         this._readyNotifier.notify()
     }
 
@@ -78,7 +79,7 @@ export class DashmipsDebugClient extends EventEmitter {
     public call(method: 'verify_breakpoints', params: DashmipsBreakpointInfo[]): void
     public call(method: DebuggerMethods, params?: any[]): void {
         params = params ? params : []
-        this.websocket.send(JSON.stringify({ method, params }))
+        this.socket.write(JSON.stringify({ method, params }))
     }
 }
 

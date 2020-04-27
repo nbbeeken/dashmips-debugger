@@ -47,6 +47,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     dashmipsArgs: string[]
     /** The command used to launch dashmips debugger */
     dashmipsCommand: string
+    host: string
+    port: number
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
@@ -108,8 +110,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
-        this.client.connect(`ws://${'localhost'}:${2390}`)
-        await this.client.ready()
+        this.client.connect(args.host, args.port)
+        //await this.client.ready()
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid
@@ -120,8 +122,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
         this.config = args
-        this.client.connect(`ws://${args.host}:${args.port}`)
-        await this.client.ready()
+        this.client.connect(args.host, args.port)
+        //await this.client.ready()
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid
@@ -340,6 +342,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         logger.error(err ? err.toString() : '')
         // Wait for 1 second before we die,
         // we need to ensure errors are written to the log file.
-        setTimeout(cb ? cb : () => {}, 1000)
+        setTimeout(cb ? cb : () => { }, 1000)
     }
 }
