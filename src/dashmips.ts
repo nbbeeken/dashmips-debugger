@@ -52,16 +52,29 @@ export class DashmipsDebugClient extends EventEmitter {
         this.emit('error', error)
     }
 
-    private onMessage = (message: string) => {
-        const response: DashmipsResponse = JSON.parse(message)
-        if (response.error) {
-            this.emit('error', response.error)
-        }
-        if (response.result) {
-            if (response.result.exited) {
-                return this.emit('exited', response)
+    private onMessage = (data: string) => {
+        let re = /{size:[0-9]+}/;
+        while (data) {
+
+            var m = re.exec(data)
+            if (m) {
+
+                var n = parseInt(m[0].slice(6, -1))
+
+                var message = data.slice(m[0].length, n + m[0].length)
+                data = data.slice(n + m[0].length)
+
+                const response: DashmipsResponse = JSON.parse(message)
+                if (response.error) {
+                    this.emit('error', response.error)
+                }
+                if (response.result) {
+                    if (response.result.exited) {
+                        return this.emit('exited', response)
+                    }
+                    this.emit(response.method, response.result)
+                }
             }
-            this.emit(response.method, response.result)
         }
     }
 
@@ -79,7 +92,8 @@ export class DashmipsDebugClient extends EventEmitter {
     public call(method: 'verify_breakpoints', params: DashmipsBreakpointInfo[]): void
     public call(method: DebuggerMethods, params?: any[]): void {
         params = params ? params : []
-        this.socket.write(JSON.stringify({ method, params }))
+        var message = JSON.stringify({ method, params })
+        this.socket.write(JSON.stringify({ size: message.length }) + message)
     }
 }
 

@@ -229,7 +229,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             case 'bin':
                 return '0b' + value.toString(2).padStart(32, '0')
             case 'dec':
-                return value.toString(10).padStart(10, '0')
+                return value.toString(10)
             case 'hex':
             default:
                 return '0x' + value.toString(16).padStart(8, '0')
