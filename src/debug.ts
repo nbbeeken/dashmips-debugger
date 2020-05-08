@@ -299,6 +299,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async evaluateRequest(response: DebugProtocol.EvaluateResponse, args: DebugProtocol.EvaluateArguments) {
+        // Find out what type of request is being made
         this.client.call('info')
         const hasOwnProperty = (obj: any, prop: string) => Object.prototype.hasOwnProperty.call(obj, prop)
         this.client.once('info', ({ program }) => {

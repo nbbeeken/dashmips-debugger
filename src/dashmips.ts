@@ -27,11 +27,15 @@ export class DashmipsDebugClient extends EventEmitter {
     public dashmipsPid: number = -1
     private socket!: Socket
     private url!: string
+    private cutoff_data: string
+    private cutoff_data_length: number
 
     private _readyNotifier = new Subject()
 
     constructor() {
         super()
+        this.cutoff_data = "";
+        this.cutoff_data_length = 0;
     }
 
     connect(host: string, port: number) {
@@ -53,26 +57,38 @@ export class DashmipsDebugClient extends EventEmitter {
     }
 
     private onMessage = (data: string) => {
-        let re = /{size:[0-9]+}/;
+        if (this.cutoff_data !== "") {
+            data = "{\"size\": " + String(this.cutoff_data_length) + "}" + this.cutoff_data + data;
+            this.cutoff_data = "";
+            this.cutoff_data_length = 0;
+        }
+        let re = /{"size": [0-9]+}/;
         while (data) {
 
             var m = re.exec(data)
             if (m) {
 
-                var n = parseInt(m[0].slice(6, -1))
+                var n = JSON.parse(m[0])["size"]
 
                 var message = data.slice(m[0].length, n + m[0].length)
                 data = data.slice(n + m[0].length)
 
-                const response: DashmipsResponse = JSON.parse(message)
-                if (response.error) {
-                    this.emit('error', response.error)
-                }
-                if (response.result) {
-                    if (response.result.exited) {
-                        return this.emit('exited', response)
+                try {
+                    const response: DashmipsResponse = JSON.parse(message)
+                    if (response.error) {
+                        this.emit('error', response.error)
                     }
-                    this.emit(response.method, response.result)
+                    if (response.result) {
+                        if (response.result.exited) {
+                            return this.emit('exited', response)
+                        }
+                        this.emit(response.method, response.result)
+                    }
+                }
+                catch {
+                    this.cutoff_data = message;
+                    this.cutoff_data_length = n;
+                    break;
                 }
             }
         }
