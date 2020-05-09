@@ -58,7 +58,7 @@ export class DashmipsDebugClient extends EventEmitter {
 
     private onMessage = (data: string) => {
         if (this.cutoff_data !== "") {
-            data = "{\"size\": " + String(this.cutoff_data_length) + "}" + this.cutoff_data + data;
+            data = `${JSON.stringify({ size: this.cutoff_data_length })}${this.cutoff_data}${data}`
             this.cutoff_data = "";
             this.cutoff_data_length = 0;
         }
@@ -84,8 +84,7 @@ export class DashmipsDebugClient extends EventEmitter {
                         }
                         this.emit(response.method, response.result)
                     }
-                }
-                catch {
+                } catch {
                     this.cutoff_data = message;
                     this.cutoff_data_length = n;
                     break;
@@ -108,7 +107,7 @@ export class DashmipsDebugClient extends EventEmitter {
     public call(method: 'verify_breakpoints', params: DashmipsBreakpointInfo[]): void
     public call(method: DebuggerMethods, params?: any[]): void {
         params = params ? params : []
-        var message = JSON.stringify({ method, params })
+        const message = JSON.stringify({ method, params })
         this.socket.write(JSON.stringify({ size: message.length }) + message)
     }
 }

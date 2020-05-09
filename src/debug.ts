@@ -111,7 +111,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
         this.client.connect(args.host, args.port)
-        //await this.client.ready()
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid
@@ -123,7 +122,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
         this.config = args
         this.client.connect(args.host, args.port)
-        //await this.client.ready()
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid
