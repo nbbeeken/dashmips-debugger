@@ -27,15 +27,15 @@ export class DashmipsDebugClient extends EventEmitter {
     public dashmipsPid: number = -1
     private socket!: Socket
     private url!: string
-    private cutoff_data: string
-    private cutoff_data_length: number
+    private cutoffData: string
+    private cutoffDataLength: number
 
     private _readyNotifier = new Subject()
 
     constructor() {
         super()
-        this.cutoff_data = "";
-        this.cutoff_data_length = 0;
+        this.cutoffData = "";
+        this.cutoffDataLength = 0;
     }
 
     connect(host: string, port: number) {
@@ -57,10 +57,10 @@ export class DashmipsDebugClient extends EventEmitter {
     }
 
     private onMessage = (data: string) => {
-        if (this.cutoff_data !== "") {
-            data = `${JSON.stringify({ size: this.cutoff_data_length })}${this.cutoff_data}${data}`
-            this.cutoff_data = "";
-            this.cutoff_data_length = 0;
+        if (this.cutoffData !== "") {
+            data = `${JSON.stringify({ size: this.cutoffDataLength })}${this.cutoffData}${data}`
+            this.cutoffData = "";
+            this.cutoffDataLength = 0;
         }
         let re = /{"size": [0-9]+}/;
         while (data) {
@@ -85,8 +85,8 @@ export class DashmipsDebugClient extends EventEmitter {
                         this.emit(response.method, response.result)
                     }
                 } catch {
-                    this.cutoff_data = message;
-                    this.cutoff_data_length = n;
+                    this.cutoffData = message;
+                    this.cutoffDataLength = n;
                     break;
                 }
             }
