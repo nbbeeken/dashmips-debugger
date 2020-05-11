@@ -65,12 +65,12 @@ export class DashmipsDebugClient extends EventEmitter {
         let re = /{"size": [0-9]+}/;
         while (data) {
 
-            var m = re.exec(data)
+            const m = re.exec(data)
             if (m) {
 
-                var n = JSON.parse(m[0])["size"]
+                const n = JSON.parse(m[0]).size
 
-                var message = data.slice(m[0].length, n + m[0].length)
+                const message = data.slice(m[0].length, n + m[0].length)
                 data = data.slice(n + m[0].length)
 
                 try {
