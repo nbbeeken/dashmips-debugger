@@ -1,4 +1,4 @@
-import * as WebSocket from 'ws'
+import { Socket } from 'net'
 import { DashmipsBreakpointInfo, DashmipsResponse, DebuggerMethods, InfoRPCReturn } from './models'
 import { EventEmitter } from 'events'
 import { logger } from 'vscode-debugadapter'
@@ -25,25 +25,30 @@ export interface DashmipsDebugClient {
 
 export class DashmipsDebugClient extends EventEmitter {
     public dashmipsPid: number = -1
-    private websocket!: WebSocket
+    private socket!: Socket
     private url!: string
+    private cutoffData: string
+    private cutoffDataLength: number
 
     private _readyNotifier = new Subject()
 
     constructor() {
         super()
+        this.cutoffData = "";
+        this.cutoffDataLength = 0;
     }
 
-    connect(url: string) {
-        this.url = url
-        this.websocket = new WebSocket(this.url, { handshakeTimeout: 0 })
-        this.websocket.on('open', this.onOpen)
+    connect(host: string, port: number) {
+        this.socket = new Socket()
+        this.socket.on('connect', this.onOpen)
+        this.socket.setEncoding('utf8');
+        this.socket.connect({ port, host })
     }
 
     private onOpen = () => {
-        this.websocket.on('message', this.onMessage)
-        this.websocket.on('close', this.onError)
-        this.websocket.on('error', this.onError)
+        this.socket.on('data', this.onMessage)
+        this.socket.on('close', this.onError)
+        this.socket.on('error', this.onError)
         this._readyNotifier.notify()
     }
 
@@ -51,16 +56,40 @@ export class DashmipsDebugClient extends EventEmitter {
         this.emit('error', error)
     }
 
-    private onMessage = (message: string) => {
-        const response: DashmipsResponse = JSON.parse(message)
-        if (response.error) {
-            this.emit('error', response.error)
+    private onMessage = (data: string) => {
+        if (this.cutoffData !== "") {
+            data = `${JSON.stringify({ size: this.cutoffDataLength })}${this.cutoffData}${data}`
+            this.cutoffData = "";
+            this.cutoffDataLength = 0;
         }
-        if (response.result) {
-            if (response.result.exited) {
-                return this.emit('exited', response)
+        let re = /{"size": [0-9]+}/;
+        while (data) {
+
+            const m = re.exec(data)
+            if (m) {
+
+                const n = JSON.parse(m[0]).size
+
+                const message = data.slice(m[0].length, n + m[0].length)
+                data = data.slice(n + m[0].length)
+
+                try {
+                    const response: DashmipsResponse = JSON.parse(message)
+                    if (response.error) {
+                        this.emit('error', response.error)
+                    }
+                    if (response.result) {
+                        if (response.result.exited) {
+                            return this.emit('exited', response)
+                        }
+                        this.emit(response.method, response.result)
+                    }
+                } catch {
+                    this.cutoffData = message;
+                    this.cutoffDataLength = n;
+                    break;
+                }
             }
-            this.emit(response.method, response.result)
         }
     }
 
@@ -78,7 +107,8 @@ export class DashmipsDebugClient extends EventEmitter {
     public call(method: 'verify_breakpoints', params: DashmipsBreakpointInfo[]): void
     public call(method: DebuggerMethods, params?: any[]): void {
         params = params ? params : []
-        this.websocket.send(JSON.stringify({ method, params }))
+        const message = JSON.stringify({ method, params })
+        this.socket.write(JSON.stringify({ size: message.length }) + message)
     }
 }
 
