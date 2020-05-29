@@ -110,6 +110,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
+        await this.configurationDone.wait(1500)
         this.client.connect(args.host, args.port)
         this.client.call('start')
         this.client.once('start', pid => {
@@ -121,6 +122,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
         this.config = args
+        await this.configurationDone.wait(1500)
         this.client.connect(args.host, args.port)
         this.client.call('start')
         this.client.once('start', pid => {
@@ -147,7 +149,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             } as DashmipsBreakpointInfo
         })
 
-        await this.client.ready()
         this.client.call('verify_breakpoints', this.breakpoints)
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, _]) => {
             response.body = {
