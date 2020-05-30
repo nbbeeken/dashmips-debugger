@@ -95,7 +95,7 @@
                             "cwd": {
                                 "type": "string",
                                 "description": "Path to terminal",
-                                "default": "${workspaceFolder:interpreter}"
+                                "default": "${workspaceFolder}"
                             },
                             "program": {
                                 "type": "string",
@@ -191,7 +191,7 @@
                         "name": "dashmips (Run Current File)",
                         "program": "${file}",
                         "registerFormat": "dec",
-                        "cwd": "${workspaceFolder:interpreter}",
+                        "cwd": "${workspaceFolder}",
                         "dashmipsCommand": "python -m dashmips debug",
                         "dashmipsArgs": [
                             "-i",
