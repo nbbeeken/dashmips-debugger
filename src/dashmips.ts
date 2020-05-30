@@ -127,9 +127,11 @@ export function buildTerminalLaunchRequestParams(launchArgs: any): BuildTermPara
     }
 
     const kind = launchArgs.console.slice(0, -'Terminal'.length)
+    const cwd = launchArgs.cwd
 
     const termArgs = {
         title: 'Dashmips',
+        cwd,
         kind,
         args,
     } as DebugProtocol.RunInTerminalRequestArguments

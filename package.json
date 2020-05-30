@@ -82,6 +82,21 @@
                             "program"
                         ],
                         "properties": {
+                            "host": {
+                                "type": "string",
+                                "description": "Host dashmips is running on",
+                                "default": "localhost"
+                            },
+                            "port": {
+                                "type": "number",
+                                "description": "Port dashmips is running on",
+                                "default": 2390
+                            },
+                            "cwd": {
+                                "type": "string",
+                                "description": "Path to terminal",
+                                "default": "${workspaceFolder}"
+                            },
                             "program": {
                                 "type": "string",
                                 "description": "Path to mips file with main label",
@@ -126,6 +141,11 @@
                                 "type": "string",
                                 "description": "The command used to launch dashmips debugger",
                                 "default": "python -m dashmips debug"
+                            },
+                            "stopOnEntry": {
+                                "type": "boolean",
+                                "description": "Whether or not to stop on first line",
+                                "default": false
                             }
                         }
                     },
@@ -144,6 +164,11 @@
                                 "type": "number",
                                 "description": "Port dashmips is running on",
                                 "default": 2390
+                            },
+                            "stopOnEntry": {
+                                "type": "boolean",
+                                "description": "Whether or not to stop on first line",
+                                "default": false
                             },
                             "registerFormat": {
                                 "enum": [
@@ -166,13 +191,14 @@
                         "name": "dashmips (Run Current File)",
                         "program": "${file}",
                         "registerFormat": "dec",
+                        "cwd": "${workspaceFolder}",
                         "dashmipsCommand": "python -m dashmips debug",
                         "dashmipsArgs": [
-                            "-l",
                             "-i",
                             "localhost",
                             "-p",
-                            "2390"
+                            "2390",
+                            "-l"
                         ]
                     },
                     {
