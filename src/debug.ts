@@ -112,6 +112,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
         await this.configurationDone.wait(1500)
         this.client.connect(args.host, args.port)
+        this.client.open = true
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid
@@ -124,6 +125,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.config = args
         await this.configurationDone.wait(1500)
         this.client.connect(args.host, args.port)
+        this.client.open = true
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid
@@ -149,18 +151,26 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             } as DashmipsBreakpointInfo
         })
 
+        // We need to block here until the socket is open
+        if (!this.client.open) {
+            await this.configurationDone.wait(1600)
+        }
+
         this.client.call('verify_breakpoints', this.breakpoints)
-        this.client.once('verify_breakpoints', ([vscodeBreakpoints, _]) => {
+        this.client.once('verify_breakpoints', ([vscodeBreakpoints, locations]) => {
             response.body = {
                 breakpoints: vscodeBreakpoints.map(
                     (bp, idx) =>
                         new Breakpoint(
-                            false,
+                            true,
                             bp.line,
                             bp.column,
-                            new Source(basename(bp.path), bp.path, idx, undefined, 'dashmips')
                         )
                 ),
+            }
+            for (var i = 0; i < locations.length; i++) {
+                if (locations[i] == -1)
+                    response.body.breakpoints[i].verified = false
             }
             return this.sendResponse(response)
         })

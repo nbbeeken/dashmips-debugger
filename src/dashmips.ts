@@ -25,6 +25,7 @@ export interface DashmipsDebugClient {
 
 export class DashmipsDebugClient extends EventEmitter {
     public dashmipsPid: number = -1
+    public open: boolean
     private socket!: Socket
     private url!: string
     private cutoffData: string
@@ -36,6 +37,7 @@ export class DashmipsDebugClient extends EventEmitter {
         super()
         this.cutoffData = "";
         this.cutoffDataLength = 0;
+        this.open = false
     }
 
     connect(host: string, port: number) {
