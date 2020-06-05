@@ -160,18 +160,15 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, locations]) => {
             response.body = {
                 breakpoints: vscodeBreakpoints.map(
-                    (bp, _) =>
+                    (bp, idx) =>
                         new Breakpoint(
-                            true,
+                            locations[idx] != -1,
                             bp.line,
                             bp.column,
                         )
                 ),
             }
-            for (var i = 0; i < locations.length; i++) {
-                if (locations[i] == -1)
-                    response.body.breakpoints[i].verified = false
-            }
+            // Breakpoints are verified by locations
             return this.sendResponse(response)
         })
     }
@@ -331,10 +328,14 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
-    private requestTermination = (error?: Error) => {
-        logger.error('termination requested from within for:')
-        logger.error(error ? error.toString() : '')
+    protected TerminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments) {
+        //logger.error('termination requested from within for:')
+        //logger.error(error ? error.toString() : '')
         this.sendEvent(new TerminatedEvent())
+        if (this.client.dashmipsPid > 1) {
+            process.kill(this.client.dashmipsPid, 'SIGINT')
+        }
+        //this.shutdown()
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
