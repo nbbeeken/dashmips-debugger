@@ -111,7 +111,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
         await this.configurationDone.wait(1500)
-
         this.client.connect(args.host, args.port)
         this.client.open = true
         this.client.call('start')
