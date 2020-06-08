@@ -110,7 +110,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
-        await this.configurationDone.wait(1500)
+        await this.configurationDone.wait(1000)
+        await this.configurationDone.wait(1000)
+
+
         this.client.connect(args.host, args.port)
         this.client.open = true
         this.client.call('start')
@@ -156,12 +159,19 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             } as DashmipsBreakpointInfo
         })
 
+        // We need to block here until the socket is open
+        if (!this.client.open) {
+            await this.configurationDone.wait(1000)
+            await this.configurationDone.wait(1100)
+        }
+
         this.client.call('verify_breakpoints', this.breakpoints)
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, locations]) => {
             response.body = {
                 breakpoints: vscodeBreakpoints.map(
                     (bp, idx) =>
                         new Breakpoint(
+                            // -1 indicates an unverified breakpoints (not a line of MIPS code)
                             locations[idx] != -1,
                             bp.line,
                             bp.column,
