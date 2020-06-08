@@ -6,7 +6,7 @@ import { DebugProtocol } from 'vscode-debugprotocol'
 import { Subject } from './subject'
 
 export interface DashmipsDebugClient {
-    on(event: 'start', listener: (pid: number) => void): this
+    on(event: 'start', listener: (pid: { "pid": number }) => void): this
     on(event: 'exited', listener: () => void): this
     on(event: 'continue', listener: () => void): this
     on(event: 'step', listener: () => void): this
@@ -14,7 +14,7 @@ export interface DashmipsDebugClient {
     on(event: 'error', listener: (error?: Error) => void): this
     on(event: 'verify_breakpoints', listener: (_: [DashmipsBreakpointInfo[], number[]]) => void): this
 
-    once(event: 'start', listener: (pid: number) => void): this
+    once(event: 'start', listener: (pid: { "pid": number }) => void): this
     once(event: 'exited', listener: () => void): this
     once(event: 'continue', listener: () => void): this
     once(event: 'step', listener: () => void): this

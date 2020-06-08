@@ -1,6 +1,5 @@
 import {
     Breakpoint,
-    Handles,
     InitializedEvent,
     Logger,
     LoggingDebugSession,
@@ -11,6 +10,7 @@ import {
     TerminatedEvent,
     Thread,
     logger,
+    Event,
 } from 'vscode-debugadapter'
 import { DashmipsDebugClient, buildTerminalLaunchRequestParams } from './dashmips'
 import { basename } from 'path'
@@ -58,7 +58,6 @@ interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
 
 export class DashmipsDebugSession extends LoggingDebugSession {
     private configurationDone = new Subject()
-    private variableHandles = new Handles<string>()
     private breakpoints: DashmipsBreakpointInfo[] = []
     private client: DashmipsDebugClient
     private config?: LaunchRequestArguments | AttachRequestArguments | any
@@ -94,6 +93,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         response.body.supportsEvaluateForHovers = true
         response.body.supportsStepBack = false
         response.body.supportsValueFormattingOptions = true
+        response.body.supportsTerminateRequest = true
         this.sendResponse(response)
         this.sendEvent(new InitializedEvent())
     }
@@ -110,26 +110,33 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
-        await this.configurationDone.wait(1500)
+        await this.configurationDone.wait(1000)
+        await this.configurationDone.wait(900)
+
         this.client.connect(args.host, args.port)
         this.client.open = true
         this.client.call('start')
         this.client.once('start', pid => {
-            this.client.dashmipsPid = pid
-            this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+            this.client.dashmipsPid = pid.pid
+            if (this.config.stopOnEntry) {
+                this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+            }
+            else { this.client.call('continue', this.breakpoints) }
         })
         this.sendResponse(response)
     }
 
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
         this.config = args
-        await this.configurationDone.wait(1500)
         this.client.connect(args.host, args.port)
         this.client.open = true
         this.client.call('start')
         this.client.once('start', pid => {
-            this.client.dashmipsPid = pid
-            this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+            this.client.dashmipsPid = pid.pid
+            if (this.config.stopOnEntry) {
+                this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+            }
+            else { this.client.call('continue', this.breakpoints) }
         })
         this.sendResponse(response)
     }
@@ -153,7 +160,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         // We need to block here until the socket is open
         if (!this.client.open) {
-            await this.configurationDone.wait(1600)
+            await this.configurationDone.wait(1000)
+            await this.configurationDone.wait(1000)
         }
 
         this.client.call('verify_breakpoints', this.breakpoints)
@@ -168,7 +176,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                         )
                 ),
             }
-            // Breakpoints are verified by locations
+            // Breakpoints are verified by locations argument
             return this.sendResponse(response)
         })
     }
@@ -328,14 +336,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
-    protected TerminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments) {
-        //logger.error('termination requested from within for:')
-        //logger.error(error ? error.toString() : '')
+    protected terminateRequest(response: DebugProtocol.TerminateResponse, args: DebugProtocol.TerminateArguments) {
         this.sendEvent(new TerminatedEvent())
         if (this.client.dashmipsPid > 1) {
             process.kill(this.client.dashmipsPid, 'SIGINT')
         }
-        //this.shutdown()
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
