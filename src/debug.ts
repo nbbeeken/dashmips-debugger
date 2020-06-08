@@ -111,7 +111,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
         await this.configurationDone.wait(1000)
-        await this.configurationDone.wait(900)
+        await this.configurationDone.wait(1000)
 
         this.client.connect(args.host, args.port)
         this.client.open = true
@@ -161,7 +161,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         // We need to block here until the socket is open
         if (!this.client.open) {
             await this.configurationDone.wait(1000)
-            await this.configurationDone.wait(1000)
+            await this.configurationDone.wait(1100)
         }
 
         this.client.call('verify_breakpoints', this.breakpoints)
