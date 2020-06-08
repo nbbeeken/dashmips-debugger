@@ -157,7 +157,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             } as DashmipsBreakpointInfo
         })
 
-
         this.client.call('verify_breakpoints', this.breakpoints)
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, locations]) => {
             response.body = {
