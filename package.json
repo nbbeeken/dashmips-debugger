@@ -199,8 +199,7 @@
                             "-p",
                             "2390",
                             "-l"
-                        ],
-                        "stopOnEntry": false
+                        ]
                     },
                     {
                         "type": "dashmips",
