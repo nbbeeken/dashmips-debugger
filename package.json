@@ -188,7 +188,7 @@
                     {
                         "type": "dashmips",
                         "request": "launch",
-                        "name": "dashmips (Run Current File)",
+                        "name": "Dashmips (Run Current File)",
                         "program": "${file}",
                         "registerFormat": "dec",
                         "cwd": "${workspaceFolder}",
@@ -204,9 +204,10 @@
                     {
                         "type": "dashmips",
                         "request": "attach",
-                        "name": "dashmips (Attach)",
+                        "name": "Dashmips (Attach)",
                         "registerFormat": "dec",
-                        "port": 2390
+                        "port": 2390,
+                        "stopOnEntry": false
                     }
                 ],
                 "configurationSnippets": [
