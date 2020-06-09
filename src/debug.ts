@@ -110,10 +110,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
-        await this.configurationDone.wait(1000)
-        await this.configurationDone.wait(1000)
-
-
+        await this.configurationDone.wait(1500)
         this.client.connect(args.host, args.port)
         this.client.open = true
         this.client.call('start')
@@ -158,12 +155,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 ...bp,
             } as DashmipsBreakpointInfo
         })
-
-        // We need to block here until the socket is open
-        if (!this.client.open) {
-            await this.configurationDone.wait(1000)
-            await this.configurationDone.wait(1100)
-        }
 
         this.client.call('verify_breakpoints', this.breakpoints)
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, locations]) => {
