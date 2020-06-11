@@ -119,11 +119,17 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         this.client.connect(args.host, args.port)
         this.client.open = true
+        while (!this.client.verified) {
+            await this.sleep(100)
+        }
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+            }
+            else if (this.client.stopEntry) {
+                this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
             }
             else { this.client.call('continue', this.breakpoints) }
         })
@@ -139,6 +145,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+            }
+            else if (this.client.stopEntry) {
+                this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
             }
             else { this.client.call('continue', this.breakpoints) }
         })
@@ -179,6 +188,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                             bp.column,
                         )
                 ),
+            }
+
+            this.client.verified = true
+            if (!this.client.stopEntry && locations.includes(0)) {
+                this.client.stopEntry = true
             }
             // Breakpoints are verified by locations argument
             return this.sendResponse(response)
