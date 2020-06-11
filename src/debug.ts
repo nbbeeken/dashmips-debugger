@@ -84,6 +84,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
+    protected async sleep(ms: number) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
     protected async initializeRequest(
         response: DebugProtocol.InitializeResponse,
         args: DebugProtocol.InitializeRequestArguments
@@ -110,8 +114,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
-        await this.configurationDone.wait(1000)
-        await this.configurationDone.wait(1000)
+        await this.sleep(1000);
 
 
         this.client.connect(args.host, args.port)
@@ -161,8 +164,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         // We need to block here until the socket is open
         if (!this.client.open) {
-            await this.configurationDone.wait(1000)
-            await this.configurationDone.wait(1100)
+            await this.sleep(1100)
         }
 
         this.client.call('verify_breakpoints', this.breakpoints)
