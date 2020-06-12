@@ -118,10 +118,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
 
         this.client.connect(args.host, args.port)
-        this.client.open = true
-        while (!this.client.verified) {
-            await this.sleep(100)
-        }
+        this.client.open.notifyAll()
+        await this.client.verified.wait(0)
+
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid.pid
@@ -139,7 +138,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
         this.config = args
         this.client.connect(args.host, args.port)
-        this.client.open = true
+        this.client.open.notifyAll()
         this.client.call('start')
         this.client.once('start', pid => {
             this.client.dashmipsPid = pid.pid
@@ -172,9 +171,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
 
         // We need to block here until the socket is open
-        if (!this.client.open) {
-            await this.sleep(1100)
-        }
+        await this.client.open.wait(0)
 
         this.client.call('verify_breakpoints', this.breakpoints)
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, locations]) => {
@@ -190,7 +187,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 ),
             }
 
-            this.client.verified = true
+            this.client.verified.notifyAll()
             if (!this.client.stopEntry && locations.includes(0)) {
                 this.client.stopEntry = true
             }
