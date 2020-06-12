@@ -85,7 +85,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async sleep(ms: number) {
-        return new Promise(resolve => setTimeout(resolve, ms))
+        return new Promise((resolve) => setTimeout(resolve, ms))
     }
 
     protected async initializeRequest(
@@ -127,8 +127,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
             } else if (this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+            } else {
+                this.client.call('continue', this.breakpoints)
             }
-            else { this.client.call('continue', this.breakpoints) }
         })
         this.sendResponse(response)
     }
@@ -142,11 +143,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
-            }
-            else if (this.client.stopEntry) {
+            } else if (this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+            } else {
+                this.client.call('continue', this.breakpoints)
             }
-            else { this.client.call('continue', this.breakpoints) }
         })
         this.sendResponse(response)
     }
@@ -371,6 +372,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         logger.error(err ? err.toString() : '')
         // Wait for 1 second before we die,
         // we need to ensure errors are written to the log file.
-        setTimeout(cb ? cb : () => { }, 1000)
+        setTimeout(cb ? cb : () => {}, 1000)
     }
 }

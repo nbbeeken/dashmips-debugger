@@ -37,7 +37,7 @@ export class DashmipsDebugClient extends EventEmitter {
 
     constructor() {
         super()
-        this.cutoffData = ""
+        this.cutoffData = ''
         this.cutoffDataLength = 0
     }
 
