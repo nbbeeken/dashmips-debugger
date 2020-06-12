@@ -85,7 +85,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async sleep(ms: number) {
-        return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise((resolve) => setTimeout(resolve, ms))
     }
 
     protected async initializeRequest(
@@ -114,23 +114,22 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
-        await this.sleep(1000);
-
+        await this.sleep(1000)
 
         this.client.connect(args.host, args.port)
         this.client.open.notifyAll()
         await this.client.verified.wait(0)
 
         this.client.call('start')
-        this.client.once('start', pid => {
+        this.client.once('start', (pid) => {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
-            }
-            else if (this.client.stopEntry) {
+            } else if (this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+            } else {
+                this.client.call('continue', this.breakpoints)
             }
-            else { this.client.call('continue', this.breakpoints) }
         })
         this.sendResponse(response)
     }
@@ -140,15 +139,15 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.client.connect(args.host, args.port)
         this.client.open.notifyAll()
         this.client.call('start')
-        this.client.once('start', pid => {
+        this.client.once('start', (pid) => {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
-            }
-            else if (this.client.stopEntry) {
+            } else if (this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+            } else {
+                this.client.call('continue', this.breakpoints)
             }
-            else { this.client.call('continue', this.breakpoints) }
         })
         this.sendResponse(response)
     }
@@ -182,7 +181,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                             // -1 indicates an unverified breakpoints (not a line of MIPS code)
                             locations[idx] != -1,
                             bp.line,
-                            bp.column,
+                            bp.column
                         )
                 ),
             }
@@ -219,7 +218,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 },
             ]
             response.body = {
-                stackFrames: stack.map(f => {
+                stackFrames: stack.map((f) => {
                     return new StackFrame(
                         f.index,
                         f.name,
@@ -373,6 +372,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         logger.error(err ? err.toString() : '')
         // Wait for 1 second before we die,
         // we need to ensure errors are written to the log file.
-        setTimeout(cb ? cb : () => { }, 1000)
+        setTimeout(cb ? cb : () => {}, 1000)
     }
 }

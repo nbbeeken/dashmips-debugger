@@ -7,10 +7,9 @@ export class Subject {
     private waiters: IWaiter[] = []
 
     public wait(timeout: number) {
-        const self = this
         const waiter = {} as IWaiter
         this.waiters.push(waiter)
-        const promise = new Promise<void>(resolve => {
+        const promise = new Promise<void>((resolve) => {
             let resolved = false
             waiter.resolve = (noRemove?: boolean) => {
                 if (resolved) {
@@ -22,16 +21,16 @@ export class Subject {
                     waiter.timeout = null
                 }
                 if (!noRemove) {
-                    const pos = self.waiters.indexOf(waiter)
+                    const pos = this.waiters.indexOf(waiter)
                     if (pos > -1) {
-                        self.waiters.splice(pos, 1)
+                        this.waiters.splice(pos, 1)
                     }
                 }
                 resolve()
             }
         })
         if (timeout > 0 && isFinite(timeout)) {
-            waiter.timeout = setTimeout(function() {
+            waiter.timeout = setTimeout(function () {
                 waiter.timeout = null
                 waiter.resolve()
             }, timeout)
@@ -41,7 +40,7 @@ export class Subject {
 
     public notify() {
         if (this.waiters.length > 0) {
-            this.waiters.pop()!.resolve(true)
+            this.waiters.pop()?.resolve(true)
         }
     }
 

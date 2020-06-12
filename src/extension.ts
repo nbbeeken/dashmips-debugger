@@ -26,7 +26,7 @@ export async function activate(context: vscode.ExtensionContext) {
 async function activateUnsafe(context: vscode.ExtensionContext) {
     const pleaseCheckDashmipsExists = vscode.workspace.getConfiguration().get('dashmips.checkDashmipsExists')
     if (pleaseCheckDashmipsExists && !checkDashmipsExists()) {
-        vscode.window.showErrorMessage('Install Dashmips with pip?', 'Yes', 'No').then(value => {
+        vscode.window.showErrorMessage('Install Dashmips with pip?', 'Yes', 'No').then((value) => {
             if (value === 'Yes') {
                 const term = vscode.window.createTerminal('Install Dashmips')
                 term.show(true)
@@ -106,7 +106,7 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
     ): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
         if (!this.server) {
             // start listening on a random port
-            this.server = Net.createServer(socket => {
+            this.server = Net.createServer((socket) => {
                 const session = new DashmipsDebugSession()
                 session.setRunAsServer(true)
                 session.start(socket as NodeJS.ReadableStream, socket)
