@@ -118,18 +118,19 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         this.client.connect(args.host, args.port)
         this.client.open.notifyAll()
-        await this.client.verified.wait(0)
+        await this.client.verified.wait(100)
 
         this.client.call('start')
         this.client.once('start', (pid) => {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
-            } else if (this.client.stopEntry) {
+            } else if (this.breakpoints.length && this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
             } else {
                 this.client.call('continue', this.breakpoints)
             }
+            this.client.stopEntry = false
         })
         this.sendResponse(response)
     }
@@ -143,11 +144,12 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
-            } else if (this.client.stopEntry) {
+            } else if (this.breakpoints.length && this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
             } else {
                 this.client.call('continue', this.breakpoints)
             }
+            this.client.stopEntry = false
         })
         this.sendResponse(response)
     }
@@ -170,7 +172,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
 
         // We need to block here until the socket is open
-        await this.client.open.wait(0)
+        if (this.client.stopEntry) {
+            await this.client.open.wait(0)
+        }
 
         this.client.call('verify_breakpoints', this.breakpoints)
         this.client.once('verify_breakpoints', ([vscodeBreakpoints, locations]) => {
@@ -187,8 +191,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             }
 
             this.client.verified.notifyAll()
-            if (!this.client.stopEntry && locations.includes(0)) {
-                this.client.stopEntry = true
+            if (this.client.stopEntry && !locations.includes(0)) {
+                this.client.stopEntry = false
             }
             // Breakpoints are verified by locations argument
             return this.sendResponse(response)

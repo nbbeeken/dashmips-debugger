@@ -27,7 +27,7 @@ export class DashmipsDebugClient extends EventEmitter {
     public dashmipsPid: number = -1
     public open = new Subject()
     public verified = new Subject()
-    public stopEntry: boolean = false
+    public stopEntry: boolean = true
     private socket!: Socket
     private url!: string
     private cutoffData: string

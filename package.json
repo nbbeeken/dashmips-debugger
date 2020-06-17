@@ -240,7 +240,7 @@
         "build": "tsc",
         "watch": "tsc --watch",
         "publish": "npx vsce publish",
-        "pretest": "npm run compile && npm run lint",
+        "pretest": "npm run build && npm run lint",
         "test": "node ./out/test/runTest.js",
         "lint": "eslint src --ext ts --fix"
     },
