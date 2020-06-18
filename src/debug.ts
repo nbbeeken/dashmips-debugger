@@ -135,9 +135,12 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
         this.config = args
         this.client.connect(args.host, args.port)
-        this.client.open.notifyAll()
+
         this.client.call('start')
-        this.client.once('start', (pid) => {
+        this.client.once('start', async (pid) => {
+            this.client.open.notifyAll()
+            await this.client.verified.wait(100)
+
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
