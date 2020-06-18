@@ -112,6 +112,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
 
         this.client.connect(args.host, args.port)
+        // Blocks here until successfully connected
         await this.client.ready()
 
         this.client.open.notifyAll()
@@ -138,6 +139,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         this.client.call('start')
         this.client.once('start', async (pid) => {
+            // SetBreakpointsRequest is called with different timing when attaching
             this.client.open.notifyAll()
             await this.client.verified.wait(100)
 

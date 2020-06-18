@@ -60,7 +60,7 @@ export class DashmipsDebugClient extends EventEmitter {
         this._readyNotifier.notify()
     }
 
-    private notConnected = (error?: Error) => {
+    private notConnected = () => {
         setTimeout(() => this.socket.connect(this.port, this.host), 100)
     }
 
