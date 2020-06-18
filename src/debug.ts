@@ -84,10 +84,6 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         })
     }
 
-    protected async sleep(ms: number) {
-        return new Promise((resolve) => setTimeout(resolve, ms))
-    }
-
     protected async initializeRequest(
         response: DebugProtocol.InitializeResponse,
         args: DebugProtocol.InitializeRequestArguments
@@ -114,9 +110,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
-        await this.sleep(1000)
 
         this.client.connect(args.host, args.port)
+        await this.client.ready()
+
         this.client.open.notifyAll()
         await this.client.verified.wait(100)
 

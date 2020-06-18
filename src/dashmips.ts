@@ -32,6 +32,8 @@ export class DashmipsDebugClient extends EventEmitter {
     private url!: string
     private cutoffData: string
     private cutoffDataLength: number
+    private host: string = ''
+    private port: number = -1
 
     private _readyNotifier = new Subject()
 
@@ -42,8 +44,11 @@ export class DashmipsDebugClient extends EventEmitter {
     }
 
     connect(host: string, port: number) {
+        this.host = host
+        this.port = port
         this.socket = new Socket()
         this.socket.on('connect', this.onOpen)
+        this.socket.on('error', this.notConnected)
         this.socket.setEncoding('utf8')
         this.socket.connect({ port, host })
     }
@@ -53,6 +58,10 @@ export class DashmipsDebugClient extends EventEmitter {
         this.socket.on('close', this.onError)
         this.socket.on('error', this.onError)
         this._readyNotifier.notify()
+    }
+
+    private notConnected = (error?: Error) => {
+        setTimeout(() => this.socket.connect(this.port, this.host), 100)
     }
 
     private onError = (error?: Error) => {
