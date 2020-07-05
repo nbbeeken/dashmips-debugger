@@ -207,6 +207,7 @@
                         "request": "attach",
                         "name": "Dashmips (Attach)",
                         "registerFormat": "dec",
+                        "host": "localhost",
                         "port": 2390,
                         "stopOnEntry": false
                     }
