@@ -18,9 +18,26 @@
 		{
 			"name": "string.quoted.double.mips",
 			"begin": "\"",
-			"patterns": [{"match": ".", "name": "string.ssraw"}],
+			"patterns": [
+				{
+					"match": ".",
+					"name": "string.ssraw"
+				}
+			],
 			"end": "\"",
 			"comment": "Strings"
+		},
+		{
+			"name": "string.quoted.single.mips",
+			"begin": "'",
+			"patterns": [
+				{
+					"match": ".",
+					"name": "string.ssraw"
+				}
+			],
+			"end": "'",
+			"comment": "Characters"
 		},
 		{
 			"name": "storage.type.mips",
