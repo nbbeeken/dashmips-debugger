@@ -1,0 +1,61 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "*" # Push events to matching '*', i.e. 1.0, 20.15.10
+
+name: Upload Release Asset
+
+jobs:
+  build:
+    name: Upload Release Asset
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2-beta
+        with:
+          node-version: "12"
+
+      - run: npm install
+
+      # makes ./dashmips-debugger-{version}.vsix
+      - name: Run headless test
+        uses: GabrielBB/xvfb-action@v1.2
+        with:
+          run: |
+            npm test
+
+      - run: npm run package
+
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        shell: bash
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./dashmips-debugger-${{ steps.get_version.outputs.VERSION }}.vsix
+          asset_name: dashmips-debugger-${{ steps.get_version.outputs.VERSION }}.vsix
+          asset_content_type: application/vsix
+
+      - name: Publish Extension
+        run: |
+          npm run publish
+        env:
+          VSCE_PAT: ${{ secrets.VS_MARKETPLACE }}
