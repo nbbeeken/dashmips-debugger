@@ -239,8 +239,9 @@
     "scripts": {
         "vscode:prepublish": "rimraf ./out && npm run build",
         "build": "tsc",
+        "package": "vsce package",
         "watch": "tsc --watch",
-        "publish": "npx vsce publish",
+        "publish": "vsce publish",
         "pretest": "npm run build && npm run lint",
         "test": "node ./out/test/runTest.js",
         "lint": "eslint src --ext ts --fix"
@@ -262,7 +263,7 @@
         "rimraf": "^3.0.2",
         "typescript": "^3.9.5",
         "utf-8-validate": "^5.0.2",
-        "vsce": "^1.76.1",
+        "vsce": "^1.77.0",
         "vscode-debugadapter-testsupport": "^1.41.0",
         "vscode-test": "^1.3.0"
     },
