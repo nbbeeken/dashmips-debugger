@@ -24,16 +24,16 @@ export interface DashmipsDebugClient {
 }
 
 export class DashmipsDebugClient extends EventEmitter {
-    public dashmipsPid: number = -1
+    public dashmipsPid = -1
     public open = new Subject()
     public verified = new Subject()
-    public stopEntry: boolean = true
+    public stopEntry = true
     private socket!: Socket
     private url!: string
     private cutoffData: string
     private cutoffDataLength: number
-    private host: string = ''
-    private port: number = -1
+    private host = ''
+    private port = -1
 
     private _readyNotifier = new Subject()
 

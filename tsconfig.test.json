@@ -2,7 +2,7 @@
     "compilerOptions": {
         "module": "commonjs",
         "target": "es2019",
-        "outDir": "out",
+        "outDir": "out-test",
         "lib": [
             "es2019"
         ],
@@ -19,6 +19,6 @@
         ".vscode-test",
     ],
     "include": [
-        "src/**/*.ts"
+        "test/**/*.ts"
     ]
 }

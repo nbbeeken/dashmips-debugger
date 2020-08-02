@@ -1,20 +1,20 @@
 'use strict'
+import { execSync } from 'child_process'
 import * as Net from 'net'
 import * as vscode from 'vscode'
 import {
     CancellationToken,
+    debug,
     DebugConfiguration,
     DebugConfigurationProvider,
     ProviderResult,
     WorkspaceFolder,
-    debug,
 } from 'vscode'
-import { execSync } from 'child_process'
 import { DashmipsDebugSession } from './debug'
 
 const EMBED_DEBUG_ADAPTER = true
 
-export async function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
     try {
         return await activateUnsafe(context)
     } catch (ex) {
@@ -38,11 +38,9 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     context.subscriptions.push(debug.registerDebugConfigurationProvider('dashmips', provider))
     context.subscriptions.push(provider)
 
-    if (EMBED_DEBUG_ADAPTER) {
-        const factory = new DashmipsDebugAdapterDescriptorFactory()
-        context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
-        context.subscriptions.push(factory)
-    }
+    const factory = new InlineDashmipsDebugAdapterFactory()
+    context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
+    context.subscriptions.push(factory)
 }
 
 export function deactivate() {}
@@ -97,7 +95,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
     }
 }
 
-export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
     private server?: Net.Server
 
     createDebugAdapterDescriptor(
@@ -123,6 +121,13 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
             this.server.close()
         }
     }
+}
+
+class InlineDashmipsDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
+    createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
+        return new vscode.DebugAdapterInlineImplementation(new DashmipsDebugSession())
+    }
+    dispose() {}
 }
 
 export function checkDashmipsExists(): boolean {

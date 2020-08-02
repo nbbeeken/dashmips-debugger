@@ -1,6 +1,7 @@
 out
+out-test
 node_modules
-.vscode-test/
+.vscode-test
 *.vsix
-demo/
-dist/
+demo
+dist
