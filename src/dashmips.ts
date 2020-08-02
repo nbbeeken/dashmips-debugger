@@ -74,14 +74,14 @@ export class DashmipsDebugClient extends EventEmitter {
             this.cutoffData = ''
             this.cutoffDataLength = 0
         }
-        const re = /{"size": [0-9]+}/
+        const re = /{\s*"size"\s*:\s*\d+\s*}/
         while (data) {
-            const m = re.exec(data)
-            if (m) {
-                const n = JSON.parse(m[0]).size
+            const match = re.exec(data)
+            if (match) {
+                const { size } = JSON.parse(match[0])
 
-                const message = data.slice(m[0].length, n + m[0].length)
-                data = data.slice(n + m[0].length)
+                const message = data.slice(match[0].length, size + match[0].length)
+                data = data.slice(size + match[0].length)
 
                 try {
                     const response: DashmipsResponse = JSON.parse(message)
@@ -96,7 +96,7 @@ export class DashmipsDebugClient extends EventEmitter {
                     }
                 } catch {
                     this.cutoffData = message
-                    this.cutoffDataLength = n
+                    this.cutoffDataLength = size
                     break
                 }
             }
