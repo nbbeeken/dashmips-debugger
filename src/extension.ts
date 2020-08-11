@@ -5,12 +5,15 @@ import {
     CancellationToken,
     DebugConfiguration,
     DebugConfigurationProvider,
+    Disposable,
     ProviderResult,
     WorkspaceFolder,
     debug,
 } from 'vscode'
 import { execSync } from 'child_process'
 import { DashmipsDebugSession } from './debug'
+import { registerCommands } from './commands'
+import { MemoryContentProvider } from './memory_content'
 
 const EMBED_DEBUG_ADAPTER = true
 
@@ -37,6 +40,15 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     const provider = new DashmipsConfigurationProvider()
     context.subscriptions.push(debug.registerDebugConfigurationProvider('dashmips', provider))
     context.subscriptions.push(provider)
+
+    const memory_provider = new MemoryContentProvider()
+    const registration = Disposable.from(
+        vscode.workspace.registerTextDocumentContentProvider('visual', memory_provider)
+    )
+
+    context.subscriptions.push(registration)
+
+    registerCommands()
 
     if (EMBED_DEBUG_ADAPTER) {
         const factory = new DashmipsDebugAdapterDescriptorFactory()
