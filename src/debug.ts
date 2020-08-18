@@ -197,10 +197,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 ),
             }
 
-            this.client.verified.notifyAll()
             if (this.client.stopEntry && !locations.includes(0)) {
                 this.client.stopEntry = false
             }
+            this.client.verified.notifyAll()
             // Breakpoints are verified by locations argument
             return this.sendResponse(response)
         })
@@ -354,7 +354,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 }
             }
             response.body = {
-                result: reply ? reply : `eval(ctx: '${args.context}', '${args.expression}')`,
+                result: reply ? reply : `${args.expression}`,
                 variablesReference: 0,
             }
             this.sendResponse(response)

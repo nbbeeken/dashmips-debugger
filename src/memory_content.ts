@@ -5,7 +5,6 @@ const pattern = '%(%)('
 
 export class MemoryContentProvider implements vscode.TextDocumentContentProvider {
     provideTextDocumentContent(uri: vscode.Uri): vscode.ProviderResult<string> {
-        vscode.window.showInformationMessage('Got here')
         if (vscode.debug.activeDebugSession) {
             vscode.window.showInformationMessage('Not implemented')
             return ''
