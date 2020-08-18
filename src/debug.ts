@@ -17,6 +17,7 @@ import { basename } from 'path'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { DashmipsBreakpointInfo } from './models'
 import { Subject } from './subject'
+import * as vscode from 'vscode'
 
 const DEBUG_LOGS = true
 export const THREAD_ID = 0
@@ -161,6 +162,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         args: DebugProtocol.SetBreakpointsArguments
     ) {
         if (!args.breakpoints) {
+            return this.sendResponse(response)
+        }
+
+        if (this.convertDebuggerPathToClient(args.source.path!) !== vscode.window.activeTextEditor?.document.uri.path) {
             return this.sendResponse(response)
         }
 
