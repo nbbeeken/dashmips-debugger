@@ -1,9 +1,12 @@
 import * as vscode from 'vscode'
 import * as cp from 'child_process'
 
-const pattern = '%(%)('
+export const pattern = '%(%)('
 
 export class MemoryContentProvider implements vscode.TextDocumentContentProvider {
+    public onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()
+    onDidChange = this.onDidChangeEmitter.event
+
     provideTextDocumentContent(uri: vscode.Uri): vscode.ProviderResult<string> {
         if (vscode.debug.activeDebugSession) {
             vscode.window.showInformationMessage('Not implemented')

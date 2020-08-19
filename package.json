@@ -25,11 +25,6 @@
         "menus": {
             "editor/title": [
                 {
-                    "command": "Refresh",
-                    "group": "navigation",
-                    "when": "resourceScheme == visual"
-                },
-                {
                     "command": "View Float",
                     "group": "navigation",
                     "when": "resourceScheme == visual"
@@ -58,10 +53,6 @@
             {
                 "command": "View Data",
                 "title": "Visualize the .data section"
-            },
-            {
-                "command": "Refresh",
-                "title": "Refresh"
             },
             {
                 "command": "View Ascii",

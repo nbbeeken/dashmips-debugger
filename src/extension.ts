@@ -13,7 +13,7 @@ import {
 import { execSync } from 'child_process'
 import { DashmipsDebugSession } from './debug'
 import { registerCommands } from './commands'
-import { MemoryContentProvider } from './memory_content'
+import { MemoryContentProvider, pattern } from './memory_content'
 
 const EMBED_DEBUG_ADAPTER = true
 
@@ -49,6 +49,18 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     context.subscriptions.push(registration)
 
     registerCommands()
+
+    vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
+        for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+            if (
+                vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') == e.uri.path.toLowerCase()
+            ) {
+                const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
+                memory_provider.onDidChangeEmitter.fire(documentUriToUpdate)
+            }
+        }
+    })
 
     if (EMBED_DEBUG_ADAPTER) {
         const factory = new DashmipsDebugAdapterDescriptorFactory()
