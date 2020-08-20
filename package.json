@@ -56,15 +56,15 @@
             },
             {
                 "command": "View Ascii",
-                "title": "View As Ascii"
+                "title": "Ascii"
             },
             {
                 "command": "View Int",
-                "title": "View As Integer"
+                "title": "Integer"
             },
             {
                 "command": "View Float",
-                "title": "View As Float"
+                "title": "Float"
             }
         ],
         "configuration": [

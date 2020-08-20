@@ -17,6 +17,7 @@ import { basename } from 'path'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { DashmipsBreakpointInfo } from './models'
 import { Subject } from './subject'
+import { pattern } from './memory_content'
 import * as vscode from 'vscode'
 
 const DEBUG_LOGS = true
@@ -62,6 +63,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private breakpoints: DashmipsBreakpointInfo[] = []
     private client: DashmipsDebugClient
     private config?: LaunchRequestArguments | AttachRequestArguments | any
+    public memory_provider?: any
 
     private set loggingEnabled(value: boolean) {
         logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
@@ -76,12 +78,40 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         this.client.on('continue', () => {
             this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+            this.visualize()
         })
         this.client.on('step', () => {
             this.sendEvent(new StoppedEvent('step', THREAD_ID))
+            this.visualize()
         })
         this.client.on('error', () => {
             this.sendEvent(new TerminatedEvent())
+        })
+    }
+
+    protected async visualize() {
+        let update_files = ''
+        for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+            if (
+                vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
+                    vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+            ) {
+                update_files += vscode.workspace.textDocuments[i].uri.path
+            }
+        }
+        this.client.call('update_visualizer', [update_files])
+        this.client.once('update_visualizer', async (t) => {
+            this.memory_provider.text = t
+            for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+                if (
+                    vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                    vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
+                        vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+                ) {
+                    await this.memory_provider.onDidChangeEmitter.fire(vscode.workspace.textDocuments[i].uri)
+                }
+            }
         })
     }
 
@@ -275,10 +305,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         }
     }
 
-    protected async variablesRequest(
-        response: DebugProtocol.VariablesResponse,
-        args: DebugProtocol.VariablesArguments
-    ) {
+    protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments) {
         const makeMemoryRowIntoVariable = (row: string): DebugProtocol.Variable => {
             const [index] = row.split('  ', 1)
             const rest = row.substring(index.length).trimLeft()

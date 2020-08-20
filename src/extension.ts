@@ -62,8 +62,22 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
         }
     })
 
+    vscode.debug.onDidTerminateDebugSession((e: vscode.DebugSession) => {
+        for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+            if (
+                vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
+                    vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+            ) {
+                const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
+                memory_provider.onDidChangeEmitter.fire(documentUriToUpdate)
+            }
+        }
+    })
+
     if (EMBED_DEBUG_ADAPTER) {
         const factory = new DashmipsDebugAdapterDescriptorFactory()
+        factory.memory_provider = memory_provider
         context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
         context.subscriptions.push(factory)
     }
@@ -122,6 +136,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
 }
 
 export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+    public memory_provider?: vscode.TextDocumentContentProvider
     private server?: Net.Server
 
     createDebugAdapterDescriptor(
@@ -132,6 +147,7 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
             // start listening on a random port
             this.server = Net.createServer((socket) => {
                 const session = new DashmipsDebugSession()
+                session.memory_provider = this.memory_provider
                 session.setRunAsServer(true)
                 session.start(socket as NodeJS.ReadableStream, socket)
             }).listen(0)
