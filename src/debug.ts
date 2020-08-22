@@ -380,11 +380,13 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                     reply = `${label.value}`
                 }
             }
-            response.body = {
-                result: reply ? reply : `${args.expression}`,
-                variablesReference: 0,
+            if (reply) {
+                response.body = {
+                    result: reply,
+                    variablesReference: 0,
+                }
+                this.sendResponse(response)
             }
-            this.sendResponse(response)
         })
     }
 
