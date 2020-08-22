@@ -41,9 +41,9 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     context.subscriptions.push(debug.registerDebugConfigurationProvider('dashmips', provider))
     context.subscriptions.push(provider)
 
-    const memory_provider = new MemoryContentProvider()
+    const memoryProvider = new MemoryContentProvider()
     const registration = Disposable.from(
-        vscode.workspace.registerTextDocumentContentProvider('visual', memory_provider)
+        vscode.workspace.registerTextDocumentContentProvider('visual', memoryProvider)
     )
 
     context.subscriptions.push(registration)
@@ -57,14 +57,14 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
                 vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') == e.uri.path.toLowerCase()
             ) {
                 const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
-                memory_provider.onDidChangeEmitter.fire(documentUriToUpdate)
+                memoryProvider.onDidChangeEmitter.fire(documentUriToUpdate)
             }
         }
     })
 
     if (EMBED_DEBUG_ADAPTER) {
         const factory = new DashmipsDebugAdapterDescriptorFactory()
-        factory.memory_provider = memory_provider
+        factory.memoryProvider = memoryProvider
         context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
         context.subscriptions.push(factory)
     }
@@ -123,7 +123,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
 }
 
 export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
-    public memory_provider?: vscode.TextDocumentContentProvider
+    public memoryProvider?: vscode.TextDocumentContentProvider
     private server?: Net.Server
 
     createDebugAdapterDescriptor(
@@ -134,7 +134,7 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
             // start listening on a random port
             this.server = Net.createServer((socket) => {
                 const session = new DashmipsDebugSession()
-                session.memoryProvider = this.memory_provider
+                session.memoryProvider = this.memoryProvider
                 session.setRunAsServer(true)
                 session.start(socket as NodeJS.ReadableStream, socket)
             }).listen(0)
