@@ -41,8 +41,30 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     context.subscriptions.push(debug.registerDebugConfigurationProvider('dashmips', provider))
     context.subscriptions.push(provider)
 
+    const memory_provider = new MemoryContentProvider()
+    const registration = Disposable.from(
+        vscode.workspace.registerTextDocumentContentProvider('visual', memory_provider)
+    )
+
+    context.subscriptions.push(registration)
+
+    registerCommands()
+
+    vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
+        for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+            if (
+                vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') == e.uri.path.toLowerCase()
+            ) {
+                const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
+                memory_provider.onDidChangeEmitter.fire(documentUriToUpdate)
+            }
+        }
+    })
+
     if (EMBED_DEBUG_ADAPTER) {
         const factory = new DashmipsDebugAdapterDescriptorFactory()
+        factory.memory_provider = memory_provider
         context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
         context.subscriptions.push(factory)
     }
@@ -100,7 +122,8 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
     }
 }
 
-class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+    public memory_provider?: vscode.TextDocumentContentProvider
     private server?: Net.Server
 
     createDebugAdapterDescriptor(
