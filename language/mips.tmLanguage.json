@@ -40,6 +40,11 @@
 			"comment": "Characters"
 		},
 		{
+			"name": "entity.name.tag.mips",
+			"match": "\\b[\\w]+\\b:",
+			"comment": "Labels"
+		},
+		{
 			"name": "storage.type.mips",
 			"match": "\\.\\b(align|ascii|asciiz|byte|extern|globl|space|word|half)\\b",
 			"comment": "Assembler directives for data storage"
@@ -47,7 +52,7 @@
 		{
 			"name": "keyword.control.mips",
 			"match": "\\.(data|text|kdata|ktext|eqv|macro|end_macro|include)",
-			"comment": "Segements"
+			"comment": "Segments"
 		},
 		{
 			"name": "variable.parameter.mips",
@@ -68,11 +73,6 @@
 			"name": "entity.name.function.mips",
 			"match": "\\b(syscall|nop)\\b",
 			"comment": "Special Instructions"
-		},
-		{
-			"name": "entity.name.tag.mips",
-			"match": "\\b[\\w]+\\b:",
-			"comment": "Labels"
 		}
 	],
 	"repository": {
