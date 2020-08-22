@@ -62,19 +62,6 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
         }
     })
 
-    vscode.debug.onDidTerminateDebugSession((e: vscode.DebugSession) => {
-        for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
-            if (
-                vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
-                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
-                    vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
-            ) {
-                const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
-                memory_provider.onDidChangeEmitter.fire(documentUriToUpdate)
-            }
-        }
-    })
-
     if (EMBED_DEBUG_ADAPTER) {
         const factory = new DashmipsDebugAdapterDescriptorFactory()
         factory.memory_provider = memory_provider

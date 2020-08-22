@@ -57,7 +57,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
                 if (data) {
                     return data
                 } else {
-                    return 'Error: File failed to compile.'
+                    return 'Error: File failed to assemble.'
                 }
             } else if (uri.path.includes('Heap')) {
                 let command =
