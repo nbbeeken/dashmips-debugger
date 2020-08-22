@@ -6,7 +6,12 @@ import { expect } from 'chai'
 // import * as myExtension from '../../extension';
 
 describe('A Dashmips extension for VSCode', () => {
-    vscode.window.showInformationMessage('Start all tests.')
+    before(() => {
+        vscode.window.showInformationMessage('Start all tests!')
+    })
+    after(() => {
+        vscode.window.showInformationMessage('All tests done!')
+    })
 
     // let dc: DebugClient
 
