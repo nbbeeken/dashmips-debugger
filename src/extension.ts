@@ -134,7 +134,7 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
             // start listening on a random port
             this.server = Net.createServer((socket) => {
                 const session = new DashmipsDebugSession()
-                session.memory_provider = this.memory_provider
+                session.memoryProvider = this.memory_provider
                 session.setRunAsServer(true)
                 session.start(socket as NodeJS.ReadableStream, socket)
             }).listen(0)

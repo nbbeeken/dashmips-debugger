@@ -43,7 +43,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
         } else {
             if (uri.path.includes('Stack')) {
                 let command =
-                    'env /Users/joshuamitchener/Desktop/DASHMIPS/interpreter/.venv/bin/python -m dashmips v ' +
+                    'python -m dashmips v ' +
                     uri.authority.split(pattern).pop()
                 if (uri.path.includes('Int')) {
                     command += ' --si'
@@ -61,7 +61,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
                 }
             } else if (uri.path.includes('Heap')) {
                 let command =
-                    'env /Users/joshuamitchener/Desktop/DASHMIPS/interpreter/.venv/bin/python -m dashmips v ' +
+                    'python -m dashmips v ' +
                     uri.authority.split(pattern).pop()
                 if (uri.path.includes('Int')) {
                     command += ' --hi'
@@ -79,7 +79,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
                 }
             } else if (uri.path.includes('Data')) {
                 let command =
-                    'env /Users/joshuamitchener/Desktop/DASHMIPS/interpreter/.venv/bin/python -m dashmips v ' +
+                    'python -m dashmips v ' +
                     uri.authority.split(pattern).pop()
                 if (uri.path.includes('Int')) {
                     command += ' --di'

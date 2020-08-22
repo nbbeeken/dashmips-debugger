@@ -63,7 +63,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private breakpoints: DashmipsBreakpointInfo[] = []
     private client: DashmipsDebugClient
     private config?: LaunchRequestArguments | AttachRequestArguments | any
-    public memory_provider?: any
+    public memoryProvider?: any
 
     private set loggingEnabled(value: boolean) {
         logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
@@ -102,14 +102,14 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         }
         this.client.call('update_visualizer', [update_files])
         this.client.once('update_visualizer', async (t) => {
-            this.memory_provider.text = t
+            this.memoryProvider.text = t
             for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
                 if (
                     vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
                     vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
                         vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
                 ) {
-                    await this.memory_provider.onDidChangeEmitter.fire(vscode.workspace.textDocuments[i].uri)
+                    await this.memoryProvider.onDidChangeEmitter.fire(vscode.workspace.textDocuments[i].uri)
                 }
             }
         })

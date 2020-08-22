@@ -44,15 +44,15 @@
         "commands": [
             {
                 "command": "View Stack",
-                "title": "Visualize the stack"
+                "title": "Dashmips: Visualize the stack"
             },
             {
                 "command": "View Heap",
-                "title": "Visualize the heap"
+                "title": "Dashmips: Visualize the heap"
             },
             {
                 "command": "View Data",
-                "title": "Visualize the .data section"
+                "title": "Dashmips: Visualize the .data section"
             },
             {
                 "command": "View Ascii",
