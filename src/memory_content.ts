@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
 import * as cp from 'child_process'
+import * as path from 'path'
 
-export const pattern = '%(%)('
+export const pattern = '\\'
 
 export class MemoryContentProvider implements vscode.TextDocumentContentProvider {
     public factory?: vscode.DebugAdapterDescriptorFactory
@@ -44,7 +45,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
             if (uri.path.includes('Stack')) {
                 let command =
                     'python -m dashmips v ' +
-                    uri.authority.split(pattern).pop()
+                    uri.authority.split(pattern).join(path.sep)
                 if (uri.path.includes('Int')) {
                     command += ' --si'
                 } else if (uri.path.includes('Float')) {
@@ -53,16 +54,12 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
                     command += ' --sa'
                 }
 
-                const data = cp.execSync(command, { cwd: vscode.workspace.rootPath, env: process.env }).toString()
-                if (data) {
-                    return data
-                } else {
-                    return 'Error: File failed to assemble.'
-                }
+                return cp.execSync(command, {cwd: vscode.workspace.rootPath, env: process.env }).toString()
+
             } else if (uri.path.includes('Heap')) {
                 let command =
                     'python -m dashmips v ' +
-                    uri.authority.split(pattern).pop()
+                    uri.authority.split(pattern).join(path.sep)
                 if (uri.path.includes('Int')) {
                     command += ' --hi'
                 } else if (uri.path.includes('Float')) {
@@ -71,16 +68,12 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
                     command += ' --ha'
                 }
 
-                const data = cp.execSync(command, { cwd: vscode.workspace.rootPath, env: process.env }).toString()
-                if (data) {
-                    return data
-                } else {
-                    return 'Error: File failed to compile.'
-                }
+                return cp.execSync(command, {cwd: vscode.workspace.rootPath, env: process.env }).toString()
+
             } else if (uri.path.includes('Data')) {
                 let command =
                     'python -m dashmips v ' +
-                    uri.authority.split(pattern).pop()
+                    uri.authority.split(pattern).join(path.sep)
                 if (uri.path.includes('Int')) {
                     command += ' --di'
                 } else if (uri.path.includes('Float')) {
@@ -89,12 +82,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
                     command += ' --da'
                 }
 
-                const data = cp.execSync(command, { cwd: vscode.workspace.rootPath, env: process.env }).toString()
-                if (data) {
-                    return data
-                } else {
-                    return 'Error: File failed to compile.'
-                }
+                return cp.execSync(command, {cwd: vscode.workspace.rootPath, env: process.env }).toString()
             }
         }
     }

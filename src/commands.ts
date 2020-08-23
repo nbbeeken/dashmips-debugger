@@ -1,4 +1,5 @@
 import * as vscode from 'vscode'
+import * as path from 'path'
 import { pattern } from './memory_content'
 
 function get_filename() {
@@ -9,7 +10,7 @@ function get_filename() {
             vscode.window.showErrorMessage('Error: path to file cannot contain sequence: ' + pattern)
             return 'Error: Pattern'
         } else {
-            return vscode.window.activeTextEditor?.document.uri.path.split('/').join(pattern)
+            return vscode.window.activeTextEditor?.document.uri.path.split(path.sep).join(pattern)
         }
     }
 }

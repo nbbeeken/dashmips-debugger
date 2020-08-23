@@ -1,6 +1,7 @@
 'use strict'
 import * as Net from 'net'
 import * as vscode from 'vscode'
+import * as path from 'path'
 import {
     CancellationToken,
     DebugConfiguration,
@@ -54,7 +55,7 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
         for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
             if (
                 vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
-                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') == e.uri.path.toLowerCase()
+                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join(path.sep) == e.uri.path.toLowerCase()
             ) {
                 const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
                 memoryProvider.onDidChangeEmitter.fire(documentUriToUpdate)
