@@ -1,20 +1,24 @@
 'use strict'
-import { execSync } from 'child_process'
 import * as Net from 'net'
 import * as vscode from 'vscode'
+import * as path from 'path'
 import {
     CancellationToken,
-    debug,
     DebugConfiguration,
     DebugConfigurationProvider,
+    Disposable,
     ProviderResult,
     WorkspaceFolder,
+    debug,
 } from 'vscode'
+import { execSync } from 'child_process'
 import { DashmipsDebugSession } from './debug'
+import { registerCommands } from './commands'
+import { MemoryContentProvider, pattern } from './memory_content'
 
 const EMBED_DEBUG_ADAPTER = true
 
-export async function activate(context: vscode.ExtensionContext): Promise<void> {
+export async function activate(context: vscode.ExtensionContext) {
     try {
         return await activateUnsafe(context)
     } catch (ex) {
@@ -38,9 +42,33 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     context.subscriptions.push(debug.registerDebugConfigurationProvider('dashmips', provider))
     context.subscriptions.push(provider)
 
-    const factory = new InlineDashmipsDebugAdapterFactory()
-    context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
-    context.subscriptions.push(factory)
+    const memoryProvider = new MemoryContentProvider()
+    const registration = Disposable.from(
+        vscode.workspace.registerTextDocumentContentProvider('visual', memoryProvider)
+    )
+
+    context.subscriptions.push(registration)
+
+    registerCommands()
+
+    vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
+        for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+            if (
+                vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join(path.sep) == e.uri.path.toLowerCase()
+            ) {
+                const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
+                memoryProvider.onDidChangeEmitter.fire(documentUriToUpdate)
+            }
+        }
+    })
+
+    if (EMBED_DEBUG_ADAPTER) {
+        const factory = new DashmipsDebugAdapterDescriptorFactory()
+        factory.memoryProvider = memoryProvider
+        context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
+        context.subscriptions.push(factory)
+    }
 }
 
 export function deactivate() {}
@@ -95,7 +123,8 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
     }
 }
 
-class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+    public memoryProvider?: vscode.TextDocumentContentProvider
     private server?: Net.Server
 
     createDebugAdapterDescriptor(
@@ -106,6 +135,7 @@ class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescri
             // start listening on a random port
             this.server = Net.createServer((socket) => {
                 const session = new DashmipsDebugSession()
+                session.memoryProvider = this.memoryProvider
                 session.setRunAsServer(true)
                 session.start(socket as NodeJS.ReadableStream, socket)
             }).listen(0)
@@ -121,13 +151,6 @@ class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescri
             this.server.close()
         }
     }
-}
-
-class InlineDashmipsDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
-    createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
-        return new vscode.DebugAdapterInlineImplementation(new DashmipsDebugSession())
-    }
-    dispose() {}
 }
 
 export function checkDashmipsExists(): boolean {

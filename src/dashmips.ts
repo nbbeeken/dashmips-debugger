@@ -13,6 +13,7 @@ export interface DashmipsDebugClient {
     on(event: 'info', listener: (_: InfoRPCReturn) => void): this
     on(event: 'error', listener: (error?: Error) => void): this
     on(event: 'verify_breakpoints', listener: (_: [DashmipsBreakpointInfo[], number[]]) => void): this
+    on(event: 'update_visualizer', listener: (t: string) => void): this
 
     once(event: 'start', listener: (pid: { pid: number }) => void): this
     once(event: 'exited', listener: () => void): this
@@ -21,6 +22,7 @@ export interface DashmipsDebugClient {
     once(event: 'info', listener: (_: InfoRPCReturn) => void): this
     once(event: 'error', listener: (error?: Error) => void): this
     once(event: 'verify_breakpoints', listener: (_: [DashmipsBreakpointInfo[], number[]]) => void): this
+    once(event: 'update_visualizer', listener: (t: string) => void): this
 }
 
 export class DashmipsDebugClient extends EventEmitter {
@@ -114,6 +116,7 @@ export class DashmipsDebugClient extends EventEmitter {
     public call(method: 'start', params?: any[]): void
     public call(method: 'step', params?: any[]): void
     public call(method: 'continue', params?: any[]): void
+    public call(method: 'update_visualizer', params: any[]): void
     public call(method: 'verify_breakpoints', params: DashmipsBreakpointInfo[]): void
     public call(method: DebuggerMethods, params?: any[]): void {
         params = params ? params : []

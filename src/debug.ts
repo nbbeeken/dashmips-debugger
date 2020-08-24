@@ -17,6 +17,8 @@ import { basename } from 'path'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { DashmipsBreakpointInfo } from './models'
 import { Subject } from './subject'
+import { pattern } from './memory_content'
+import * as vscode from 'vscode'
 
 const DEBUG_LOGS = true
 export const THREAD_ID = 0
@@ -61,6 +63,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private breakpoints: DashmipsBreakpointInfo[] = []
     private client: DashmipsDebugClient
     private config?: LaunchRequestArguments | AttachRequestArguments | any
+    public memoryProvider?: any
 
     private set loggingEnabled(value: boolean) {
         logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
@@ -75,12 +78,40 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         this.client.on('continue', () => {
             this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+            this.visualize()
         })
         this.client.on('step', () => {
             this.sendEvent(new StoppedEvent('step', THREAD_ID))
+            this.visualize()
         })
         this.client.on('error', () => {
             this.sendEvent(new TerminatedEvent())
+        })
+    }
+
+    protected async visualize() {
+        let update_files = ''
+        for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+            if (
+                vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
+                    vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+            ) {
+                update_files += vscode.workspace.textDocuments[i].uri.path
+            }
+        }
+        this.client.call('update_visualizer', [update_files])
+        this.client.once('update_visualizer', async (t) => {
+            this.memoryProvider.text = t
+            for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+                if (
+                    vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                    vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
+                        vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+                ) {
+                    await this.memoryProvider.onDidChangeEmitter.fire(vscode.workspace.textDocuments[i].uri)
+                }
+            }
         })
     }
 
@@ -164,6 +195,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             return this.sendResponse(response)
         }
 
+        if (this.convertDebuggerPathToClient(args.source.path!) !== vscode.window.activeTextEditor?.document.uri.path) {
+            return this.sendResponse(response)
+        }
+
         this.breakpoints = args.breakpoints.map((bp, idx) => {
             const path = this.convertDebuggerPathToClient(args.source.path!)
             return {
@@ -192,10 +227,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 ),
             }
 
-            this.client.verified.notifyAll()
             if (this.client.stopEntry && !locations.includes(0)) {
                 this.client.stopEntry = false
             }
+            this.client.verified.notifyAll()
             // Breakpoints are verified by locations argument
             return this.sendResponse(response)
         })
@@ -270,10 +305,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         }
     }
 
-    protected async variablesRequest(
-        response: DebugProtocol.VariablesResponse,
-        args: DebugProtocol.VariablesArguments
-    ) {
+    protected variablesRequest(response: DebugProtocol.VariablesResponse, args: DebugProtocol.VariablesArguments) {
         const makeMemoryRowIntoVariable = (row: string): DebugProtocol.Variable => {
             const [index] = row.split('  ', 1)
             const rest = row.substring(index.length).trimLeft()
@@ -348,11 +380,13 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                     reply = `${label.value}`
                 }
             }
-            response.body = {
-                result: reply ? reply : `eval(ctx: '${args.context}', '${args.expression}')`,
-                variablesReference: 0,
+            if (reply) {
+                response.body = {
+                    result: reply,
+                    variablesReference: 0,
+                }
+                this.sendResponse(response)
             }
-            this.sendResponse(response)
         })
     }
 

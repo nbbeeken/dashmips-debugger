@@ -22,6 +22,51 @@
         "onLanguage:mips"
     ],
     "contributes": {
+        "menus": {
+            "editor/title": [
+                {
+                    "command": "View Float",
+                    "group": "navigation",
+                    "when": "resourceScheme == visual"
+                },
+                {
+                    "command": "View Int",
+                    "group": "navigation",
+                    "when": "resourceScheme == visual"
+                },
+                {
+                    "command": "View Ascii",
+                    "group": "navigation",
+                    "when": "resourceScheme == visual"
+                }
+            ]
+        },
+        "commands": [
+            {
+                "command": "View Stack",
+                "title": "Dashmips: Visualize the stack"
+            },
+            {
+                "command": "View Heap",
+                "title": "Dashmips: Visualize the heap"
+            },
+            {
+                "command": "View Data",
+                "title": "Dashmips: Visualize the .data section"
+            },
+            {
+                "command": "View Ascii",
+                "title": "Ascii"
+            },
+            {
+                "command": "View Int",
+                "title": "Integer"
+            },
+            {
+                "command": "View Float",
+                "title": "Float"
+            }
+        ],
         "configuration": [
             {
                 "title": "Dashmips Debugger",

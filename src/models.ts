@@ -50,7 +50,14 @@ export interface InfoRPCReturn extends RPCReturn {
     program: MipsProgram
 }
 
-export type DebuggerMethods = 'start' | 'step' | 'continue' | 'stop' | 'info' | 'verify_breakpoints'
+export type DebuggerMethods =
+    | 'start'
+    | 'step'
+    | 'continue'
+    | 'stop'
+    | 'info'
+    | 'verify_breakpoints'
+    | 'update_visualizer'
 
 export interface DashmipsResponse {
     method: DebuggerMethods
