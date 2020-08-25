@@ -323,13 +323,15 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             switch (variablesReference) {
                 case VARIABLE_REF.REGISTERS: {
                     for (const registerName in program.registers) {
-                        const value = program.registers[registerName]
-                        variables.push({
-                            name: registerName,
-                            type: 'integer',
-                            value: this.formatRegister(value),
-                            variablesReference: 0,
-                        } as DebugProtocol.Variable)
+                        if (registerName !== "lowest_stack") {
+                            const value = program.registers[registerName]
+                            variables.push({
+                                name: registerName,
+                                type: 'integer',
+                                value: this.formatRegister(value),
+                                variablesReference: 0,
+                            } as DebugProtocol.Variable)
+                        }
                     }
                     break
                 }
