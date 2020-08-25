@@ -15,7 +15,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
             const s = '&&&&'
             const message = 'Please visualize the file before debugging.'
 
-            if (text.split(s)[i] == ' ') {
+            if (text.split(s)[i] == ' ' || text.split(s)[i] == '') {
                 return message
             } else {
                 return text.split(s + ' ')[i]
