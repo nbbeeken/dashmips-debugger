@@ -32,8 +32,6 @@ const enum VARIABLE_REF {
     MEMORY_DATA,
 }
 
-type DebuggerMethods = 'start' | 'step' | 'continue' | 'stop' | 'info'
-
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     /** Identifier */
     name: string
@@ -85,6 +83,9 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.visualize()
         })
         this.client.on('error', () => {
+            this.sendEvent(new TerminatedEvent())
+        })
+        this.client.on('exited', () => {
             this.sendEvent(new TerminatedEvent())
         })
     }
@@ -397,6 +398,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         if (this.client.dashmipsPid > 1) {
             process.kill(this.client.dashmipsPid, 'SIGINT')
         }
+        this.sendResponse(response)
     }
 
     protected disconnectRequest(response: DebugProtocol.DisconnectResponse, args: DebugProtocol.DisconnectArguments) {
@@ -404,6 +406,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             process.kill(this.client.dashmipsPid, 'SIGINT')
         }
         this.shutdown()
+        this.sendResponse(response)
     }
 
     static processError = (err: Error, cb?: () => void) => {
