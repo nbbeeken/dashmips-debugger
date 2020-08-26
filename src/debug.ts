@@ -324,7 +324,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             switch (variablesReference) {
                 case VARIABLE_REF.REGISTERS: {
                     for (const registerName in program.registers) {
-                        if (registerName !== "lowest_stack") {
+                        if (registerName !== "lowest_stack" && registerName !== "end_heap") {
                             const value = program.registers[registerName]
                             variables.push({
                                 name: registerName,
