@@ -199,8 +199,7 @@
                     "attach": {
                         "required": [
                             "host",
-                            "port",
-                            "program"
+                            "port"
                         ],
                         "properties": {
                             "host": {
@@ -212,11 +211,6 @@
                                 "type": "number",
                                 "description": "Port dashmips is running on",
                                 "default": 2390
-                            },
-                            "program": {
-                                "type": "string",
-                                "description": "Path to mips file with main label",
-                                "default": "^\"\\${file}\""
                             },
                             "stopOnEntry": {
                                 "type": "boolean",
@@ -261,7 +255,6 @@
                         "type": "dashmips",
                         "request": "attach",
                         "name": "Dashmips (Attach)",
-                        "program": "^\"\\${file}\"",
                         "registerFormat": "dec",
                         "host": "localhost",
                         "port": 2390,
@@ -298,7 +291,6 @@
                             "type": "dashmips",
                             "request": "attach",
                             "name": "Dashmips (Attach)",
-                            "program": "^\"\\${file}\"",
                             "registerFormat": "dec",
                             "host": "localhost",
                             "port": 2390,
