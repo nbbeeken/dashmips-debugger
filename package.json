@@ -124,6 +124,8 @@
                 "configurationAttributes": {
                     "launch": {
                         "required": [
+                            "host",
+                            "port",
                             "program"
                         ],
                         "properties": {
@@ -140,12 +142,12 @@
                             "cwd": {
                                 "type": "string",
                                 "description": "Path to terminal",
-                                "default": "${workspaceFolder}"
+                                "default": "^\"\\${workspaceFolder}\""
                             },
                             "program": {
                                 "type": "string",
                                 "description": "Path to mips file with main label",
-                                "default": "${file}"
+                                "default": "^\"\\${file}\""
                             },
                             "registerFormat": {
                                 "enum": [
@@ -197,7 +199,8 @@
                     "attach": {
                         "required": [
                             "host",
-                            "port"
+                            "port",
+                            "program"
                         ],
                         "properties": {
                             "host": {
@@ -209,6 +212,11 @@
                                 "type": "number",
                                 "description": "Port dashmips is running on",
                                 "default": 2390
+                            },
+                            "program": {
+                                "type": "string",
+                                "description": "Path to mips file with main label",
+                                "default": "^\"\\${file}\""
                             },
                             "stopOnEntry": {
                                 "type": "boolean",
@@ -234,23 +242,26 @@
                         "type": "dashmips",
                         "request": "launch",
                         "name": "Dashmips (Run Current File)",
-                        "program": "${file}",
+                        "program": "^\"\\${file}\"",
                         "registerFormat": "dec",
-                        "cwd": "${workspaceFolder}",
+                        "host": "localhost",
+                        "port": 2390,
+                        "cwd": "^\"\\${workspaceFolder}\"",
                         "dashmipsCommand": "python -m dashmips debug",
                         "dashmipsArgs": [
                             "-i",
                             "localhost",
                             "-p",
-                            "2390",
-                            "-l"
+                            "2390"
                         ],
+                        "args": [],
                         "stopOnEntry": false
                     },
                     {
                         "type": "dashmips",
                         "request": "attach",
                         "name": "Dashmips (Attach)",
+                        "program": "^\"\\${file}\"",
                         "registerFormat": "dec",
                         "host": "localhost",
                         "port": 2390,
@@ -259,22 +270,39 @@
                 ],
                 "configurationSnippets": [
                     {
-                        "label": "Dashmips Debug: Launch",
-                        "description": "A new configuration for 'debugging' a user selected mips file.",
+                        "label": "Dashmips (Run Current File)",
+                        "description": "Run the current MIPS file.",
                         "body": {
                             "type": "dashmips",
                             "request": "launch",
-                            "name": "dashmips (Run Current File)",
+                            "name": "Dashmips (Run Current File)",
                             "program": "^\"\\${file}\"",
                             "registerFormat": "dec",
+                            "cwd": "^\"\\${workspaceFolder}\"",
+                            "host": "localhost",
+                            "port": 2390,
                             "dashmipsCommand": "python -m dashmips debug",
                             "dashmipsArgs": [
-                                "-l",
                                 "-i",
                                 "localhost",
                                 "-p",
                                 "2390"
-                            ]
+                            ],
+                            "args": [],
+                            "stopOnEntry": false
+                        }
+                    },
+                    {"label": "Dashmips (Attach)",
+                    "description": "Attach to a debugging session of a MIPS file.",
+                    "body": {
+                            "type": "dashmips",
+                            "request": "attach",
+                            "name": "Dashmips (Attach)",
+                            "program": "^\"\\${file}\"",
+                            "registerFormat": "dec",
+                            "host": "localhost",
+                            "port": 2390,
+                            "stopOnEntry": false
                         }
                     }
                 ]
