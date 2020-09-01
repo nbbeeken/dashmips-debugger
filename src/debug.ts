@@ -141,6 +141,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
+        if (!args.host || !args.port) {
+            vscode.window.showErrorMessage("Please include host and/or port in launch.json.")
+            this.sendEvent(new TerminatedEvent())
+            return
+        }
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
 
         this.client.connect(args.host, args.port)
@@ -337,11 +342,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                     break
                 }
                 case VARIABLE_REF.MEMORY_STACK: {
-                    variables.push(...program.memory.stack.split('\n').map(makeMemoryRowIntoVariable))
+                    variables.push(...program.memory.stack.split('\n').slice(0, Math.floor((100663296 - program.registers["lowest_stack"]) / 4) + 1).map(makeMemoryRowIntoVariable))
                     break
                 }
                 case VARIABLE_REF.MEMORY_HEAP: {
-                    variables.push(...program.memory.heap.split('\n').map(makeMemoryRowIntoVariable))
+                    variables.push(...program.memory.heap.split('\n').slice(0, Math.floor((program.registers["end_heap"] - 6291456) / 4)).map(makeMemoryRowIntoVariable))
                     break
                 }
                 case VARIABLE_REF.MEMORY_DATA: {
