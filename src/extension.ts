@@ -52,13 +52,15 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     registerCommands()
 
     vscode.workspace.onDidSaveTextDocument((e: vscode.TextDocument) => {
-        for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
-            if (
-                vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
-                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join(path.sep) == e.uri.path.toLowerCase()
-            ) {
-                const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
-                memoryProvider.onDidChangeEmitter.fire(documentUriToUpdate)
+        if (!vscode.debug.activeDebugSession) {
+            for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+                if (
+                    vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
+                    vscode.workspace.textDocuments[i].uri.authority.split(pattern).join(path.sep) == e.uri.path.toLowerCase()
+                ) {
+                    const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
+                    memoryProvider.onDidChangeEmitter.fire(documentUriToUpdate)
+                }
             }
         }
     })

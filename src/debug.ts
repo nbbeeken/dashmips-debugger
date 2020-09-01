@@ -62,6 +62,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private client: DashmipsDebugClient
     private config?: LaunchRequestArguments | AttachRequestArguments | any
     public memoryProvider?: any
+    public program_path: string = ''
 
     private set loggingEnabled(value: boolean) {
         logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
@@ -96,7 +97,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             if (
                 vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
                 vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
-                    vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+                    this.program_path
             ) {
                 update_files += vscode.workspace.textDocuments[i].uri.path
             }
@@ -108,11 +109,12 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 if (
                     vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
                     vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
-                        vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+                        this.program_path
                 ) {
                     await this.memoryProvider.onDidChangeEmitter.fire(vscode.workspace.textDocuments[i].uri)
                 }
             }
+            this.memoryProvider.text = null  // <-- This acts as a check if the debug session is active
         })
     }
 
@@ -160,8 +162,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+                this.visualize()
             } else if (this.breakpoints.length && this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+                this.visualize()
             } else {
                 this.client.call('continue', this.breakpoints)
             }
@@ -183,8 +187,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+                this.visualize()
             } else if (this.breakpoints.length && this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+                this.visualize()
             } else {
                 this.client.call('continue', this.breakpoints)
             }
@@ -203,6 +209,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         if (this.convertDebuggerPathToClient(args.source.path!) !== vscode.window.activeTextEditor?.document.uri.path) {
             return this.sendResponse(response)
+        }
+
+        if (!this.program_path) {
+            this.program_path = this.convertDebuggerPathToClient(args.source.path!).toLowerCase()
         }
 
         this.breakpoints = args.breakpoints.map((bp, idx) => {
