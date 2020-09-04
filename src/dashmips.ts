@@ -133,7 +133,7 @@ type BuildTermParams = [
 export function buildTerminalLaunchRequestParams(launchArgs: any): BuildTermParams {
     // This will never reject, since vscode is weird with long running processes
     // We will detect failure to launch when we are unable to connect to ws
-    const args = [...launchArgs.dashmipsCommand.split(' '), ...launchArgs.dashmipsArgs, launchArgs.program]
+    const args = [...launchArgs.dashmipsCommand.split(' '), ...launchArgs.dashmipsArgs, launchArgs.program, ...launchArgs.args]
     if (launchArgs.args && launchArgs.args.length > 0) {
         // Mips arguments
         args.push('-a', ...launchArgs.args)
