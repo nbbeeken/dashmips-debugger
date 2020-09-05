@@ -21,7 +21,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
                 return text.split(s + ' ')[i]
             }
         }
-        if (vscode.debug.activeDebugSession && this.text) {
+        if (this.text) {
             if (uri.path.includes('Stack: Ascii')) {
                 return check(this.text, 0)
             } else if (uri.path.includes('Stack: Int')) {
@@ -42,10 +42,18 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
                 return check(this.text, 8)
             }
         } else {
+            var filename
+            for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
+                if (vscode.workspace.textDocuments[i].fileName.toLowerCase() == uri.authority.split(pattern).join(path.sep))
+                {  // The uri filename is automatically lowercased, so this code recovers the normal version
+                    filename = vscode.workspace.textDocuments[i].fileName
+                    break
+                }
+            }
             if (uri.path.includes('Stack')) {
                 let command =
                     'python -m dashmips v ' +
-                    uri.authority.split(pattern).join(path.sep)
+                    filename
                 if (uri.path.includes('Int')) {
                     command += ' --si'
                 } else if (uri.path.includes('Float')) {
@@ -59,7 +67,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
             } else if (uri.path.includes('Heap')) {
                 let command =
                     'python -m dashmips v ' +
-                    uri.authority.split(pattern).join(path.sep)
+                    filename
                 if (uri.path.includes('Int')) {
                     command += ' --hi'
                 } else if (uri.path.includes('Float')) {
@@ -73,7 +81,7 @@ export class MemoryContentProvider implements vscode.TextDocumentContentProvider
             } else if (uri.path.includes('Data')) {
                 let command =
                     'python -m dashmips v ' +
-                    uri.authority.split(pattern).join(path.sep)
+                    filename
                 if (uri.path.includes('Int')) {
                     command += ' --di'
                 } else if (uri.path.includes('Float')) {
