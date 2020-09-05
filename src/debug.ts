@@ -62,6 +62,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private client: DashmipsDebugClient
     private config?: LaunchRequestArguments | AttachRequestArguments | any
     public memoryProvider?: any
+    public program_path: string = ''
 
     private set loggingEnabled(value: boolean) {
         logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
@@ -96,7 +97,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             if (
                 vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
                 vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
-                    vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+                    this.program_path
             ) {
                 update_files += vscode.workspace.textDocuments[i].uri.path
             }
@@ -108,11 +109,12 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                 if (
                     vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
                     vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
-                        vscode.window.activeTextEditor?.document.uri.path.toLowerCase()
+                        this.program_path
                 ) {
                     await this.memoryProvider.onDidChangeEmitter.fire(vscode.workspace.textDocuments[i].uri)
                 }
             }
+            this.memoryProvider.text = null  // <-- This acts as a check if the debug session is active
         })
     }
 
@@ -141,6 +143,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
+        if (!args.host || !args.port) {
+            vscode.window.showErrorMessage("Please include host and/or port in launch.json.")
+            this.sendEvent(new TerminatedEvent())
+            return
+        }
         this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
 
         this.client.connect(args.host, args.port)
@@ -155,8 +162,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+                this.visualize()
             } else if (this.breakpoints.length && this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+                this.visualize()
             } else {
                 this.client.call('continue', this.breakpoints)
             }
@@ -178,8 +187,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.client.dashmipsPid = pid.pid
             if (this.config.stopOnEntry) {
                 this.sendEvent(new StoppedEvent('entry', THREAD_ID))
+                this.visualize()
             } else if (this.breakpoints.length && this.client.stopEntry) {
                 this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+                this.visualize()
             } else {
                 this.client.call('continue', this.breakpoints)
             }
@@ -198,6 +209,10 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         if (this.convertDebuggerPathToClient(args.source.path!) !== vscode.window.activeTextEditor?.document.uri.path) {
             return this.sendResponse(response)
+        }
+
+        if (!this.program_path) {
+            this.program_path = this.convertDebuggerPathToClient(args.source.path!).toLowerCase()
         }
 
         this.breakpoints = args.breakpoints.map((bp, idx) => {
@@ -337,11 +352,11 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                     break
                 }
                 case VARIABLE_REF.MEMORY_STACK: {
-                    variables.push(...program.memory.stack.split('\n').map(makeMemoryRowIntoVariable))
+                    variables.push(...program.memory.stack.split('\n').slice(0, Math.floor((100663296 - program.registers["lowest_stack"]) / 4) + 1).map(makeMemoryRowIntoVariable))
                     break
                 }
                 case VARIABLE_REF.MEMORY_HEAP: {
-                    variables.push(...program.memory.heap.split('\n').map(makeMemoryRowIntoVariable))
+                    variables.push(...program.memory.heap.split('\n').slice(0, Math.floor((program.registers["end_heap"] - 6291456) / 4)).map(makeMemoryRowIntoVariable))
                     break
                 }
                 case VARIABLE_REF.MEMORY_DATA: {
