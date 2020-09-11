@@ -413,6 +413,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         if (this.client.dashmipsPid > 1) {
             process.kill(this.client.dashmipsPid, 'SIGINT')
         }
+        this.client.running = false
         this.sendResponse(response)
     }
 
@@ -421,6 +422,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             process.kill(this.client.dashmipsPid, 'SIGINT')
         }
         this.shutdown()
+        this.client.running = false
         this.sendResponse(response)
     }
 

@@ -4,6 +4,7 @@ import { EventEmitter } from 'events'
 import { logger } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { Subject } from './subject'
+import * as vscode from 'vscode'
 
 export interface DashmipsDebugClient {
     on(event: 'start', listener: (pid: { pid: number }) => void): this
@@ -36,6 +37,7 @@ export class DashmipsDebugClient extends EventEmitter {
     private cutoffDataLength: number
     private host = ''
     private port = -1
+    public running = true
 
     private _readyNotifier = new Subject()
 
@@ -63,7 +65,9 @@ export class DashmipsDebugClient extends EventEmitter {
     }
 
     private notConnected = () => {
-        setTimeout(() => this.socket.connect(this.port, this.host), 100)
+        if (this.running) {
+            setTimeout(() => this.socket.connect(this.port, this.host), 100)
+        }
     }
 
     private onError = (error?: Error) => {
