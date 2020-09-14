@@ -207,7 +207,12 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             return this.sendResponse(response)
         }
 
-        if (this.convertDebuggerPathToClient(args.source.path!) !== vscode.window.activeTextEditor?.document.uri.path) {
+        var path1 = this.convertDebuggerPathToClient(args.source.path!).split("\\").join("/")
+        if (path1[0] !== "/") {path1 = "/" + path1}
+        var path2 = String(vscode.window.activeTextEditor?.document.uri.path)
+        if (path2[0] !== "/") {path2 = "/" + path2}
+
+        if (path1 !== path2) {
             return this.sendResponse(response)
         }
 
