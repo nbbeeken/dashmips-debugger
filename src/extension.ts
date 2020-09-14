@@ -66,10 +66,9 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     })
 
     if (EMBED_DEBUG_ADAPTER) {
-        const factory = new DashmipsDebugAdapterDescriptorFactory()
+        const factory = new InlineDebugAdapterFactory()
         factory.memoryProvider = memoryProvider
         context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
-        context.subscriptions.push(factory)
     }
 }
 
@@ -126,6 +125,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
 }
 
 export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+    // NOTE: CURRENTLY USING InlineDebugAdapterFactory INSTEAD OF THIS FACTORY
     public memoryProvider?: vscode.TextDocumentContentProvider
     private server?: Net.Server
 
@@ -153,6 +153,14 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
             this.server.close()
         }
     }
+}
+
+export class InlineDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
+    public memoryProvider?: vscode.TextDocumentContentProvider
+
+	createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
+		return new vscode.DebugAdapterInlineImplementation(new DashmipsDebugSession());
+	}
 }
 
 export function checkDashmipsExists(): boolean {
