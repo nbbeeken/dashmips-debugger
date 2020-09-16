@@ -212,7 +212,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         var path2 = String(vscode.window.activeTextEditor?.document.uri.path)
         if (path2[0] !== "/") {path2 = "/" + path2}
 
-        if (path1 !== path2) {
+        // Compare the two strings minus the home directory
+        if (path1.split("/").slice(2).join("/") !== path2.split("/").slice(2).join("/")) {
             return this.sendResponse(response)
         }
 
