@@ -62,7 +62,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private client: DashmipsDebugClient
     private config?: LaunchRequestArguments | AttachRequestArguments | any
     public memoryProvider?: any
-    public program_path: string = ''
+    public program_path = ''
 
     private set loggingEnabled(value: boolean) {
         logger.setup(value ? Logger.LogLevel.Verbose : Logger.LogLevel.Stop, true)
@@ -96,8 +96,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
         for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
             if (
                 vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
-                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
-                    this.program_path
+                vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') == this.program_path
             ) {
                 update_files += vscode.workspace.textDocuments[i].uri.path
             }
@@ -108,13 +107,12 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
                 if (
                     vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
-                    vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') ==
-                        this.program_path
+                    vscode.workspace.textDocuments[i].uri.authority.split(pattern).join('/') == this.program_path
                 ) {
                     await this.memoryProvider.onDidChangeEmitter.fire(vscode.workspace.textDocuments[i].uri)
                 }
             }
-            this.memoryProvider.text = null  // <-- This acts as a check if the debug session is active
+            this.memoryProvider.text = null // <-- This acts as a check if the debug session is active
         })
     }
 
@@ -144,7 +142,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.config = args
         if (!args.host || !args.port) {
-            vscode.window.showErrorMessage("Please include host and/or port in launch.json.")
+            vscode.window.showErrorMessage('Please include host and/or port in launch.json.')
             this.sendEvent(new TerminatedEvent())
             return
         }
@@ -207,13 +205,17 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             return this.sendResponse(response)
         }
 
-        var path1 = this.convertDebuggerPathToClient(args.source.path!).split("\\").join("/")
-        if (path1[0] !== "/") {path1 = "/" + path1}
-        var path2 = String(vscode.window.activeTextEditor?.document.uri.path)
-        if (path2[0] !== "/") {path2 = "/" + path2}
+        let path1 = this.convertDebuggerPathToClient(args.source.path!).split('\\').join('/')
+        if (path1[0] !== '/') {
+            path1 = '/' + path1
+        }
+        let path2 = String(vscode.window.activeTextEditor?.document.uri.path)
+        if (path2[0] !== '/') {
+            path2 = '/' + path2
+        }
 
         // Compare the two strings minus the home directory
-        if (path1.split("/").slice(2).join("/") !== path2.split("/").slice(2).join("/")) {
+        if (path1.split('/').slice(2).join('/') !== path2.split('/').slice(2).join('/')) {
             return this.sendResponse(response)
         }
 
@@ -345,7 +347,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             switch (variablesReference) {
                 case VARIABLE_REF.REGISTERS: {
                     for (const registerName in program.registers) {
-                        if (registerName !== "lowest_stack" && registerName !== "end_heap") {
+                        if (registerName !== 'lowest_stack' && registerName !== 'end_heap') {
                             const value = program.registers[registerName]
                             variables.push({
                                 name: registerName,
@@ -358,11 +360,21 @@ export class DashmipsDebugSession extends LoggingDebugSession {
                     break
                 }
                 case VARIABLE_REF.MEMORY_STACK: {
-                    variables.push(...program.memory.stack.split('\n').slice(0, Math.floor((100663296 - program.registers["lowest_stack"]) / 4) + 1).map(makeMemoryRowIntoVariable))
+                    variables.push(
+                        ...program.memory.stack
+                            .split('\n')
+                            .slice(0, Math.floor((100663296 - program.registers['lowest_stack']) / 4) + 1)
+                            .map(makeMemoryRowIntoVariable)
+                    )
                     break
                 }
                 case VARIABLE_REF.MEMORY_HEAP: {
-                    variables.push(...program.memory.heap.split('\n').slice(0, Math.floor((program.registers["end_heap"] - 6291456) / 4)).map(makeMemoryRowIntoVariable))
+                    variables.push(
+                        ...program.memory.heap
+                            .split('\n')
+                            .slice(0, Math.floor((program.registers['end_heap'] - 6291456) / 4))
+                            .map(makeMemoryRowIntoVariable)
+                    )
                     break
                 }
                 case VARIABLE_REF.MEMORY_DATA: {
