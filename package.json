@@ -311,9 +311,10 @@
                             "stopOnEntry": false
                         }
                     },
-                    {"label": "Dashmips (Attach)",
-                    "description": "Attach to a debugging session of a MIPS file.",
-                    "body": {
+                    {
+                        "label": "Dashmips (Attach)",
+                        "description": "Attach to a debugging session of a MIPS file.",
+                        "body": {
                             "type": "dashmips",
                             "request": "attach",
                             "name": "Dashmips (Attach)",
