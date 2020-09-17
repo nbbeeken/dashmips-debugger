@@ -23,6 +23,20 @@
     ],
     "contributes": {
         "menus": {
+            "debug/variables/context": [
+                {
+                    "command": "View variables while debugging Decimal",
+                    "when": "debugConfigurationType == 'dashmips'"
+                },
+                {
+                    "command": "View variables while debugging Hex",
+                    "when": "debugConfigurationType == 'dashmips'"
+                },
+                {
+                    "command": "View variables while debugging Ascii",
+                    "when": "debugConfigurationType == 'dashmips'"
+                }
+            ],
             "editor/title": [
                 {
                     "command": "View Float",
@@ -42,6 +56,18 @@
             ]
         },
         "commands": [
+            {
+                "command": "View variables while debugging Decimal",
+                "title": "View As Decimal"
+            },
+            {
+                "command": "View variables while debugging Hex",
+                "title": "View As Hex"
+            },
+            {
+                "command": "View variables while debugging Ascii",
+                "title": "View As Ascii"
+            },
             {
                 "command": "View Stack",
                 "title": "Dashmips: Visualize the stack"
