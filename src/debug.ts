@@ -146,11 +146,14 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             this.sendEvent(new TerminatedEvent())
             return
         }
-        this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
-
         this.client.connect(args.host, args.port)
-        // Blocks here until successfully connected
-        await this.client.ready()
+
+        await this.client.checkAttach.wait(0)
+        if (!this.client.attached) {
+            this.runInTerminalRequest(...buildTerminalLaunchRequestParams(args))
+            // Blocks here until successfully connected
+            await this.client.ready()
+        }
 
         this.client.open.notifyAll()
         await this.client.verified.wait(100)

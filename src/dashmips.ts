@@ -30,6 +30,8 @@ export class DashmipsDebugClient extends EventEmitter {
     public dashmipsPid = -1
     public open = new Subject()
     public verified = new Subject()
+    public checkAttach = new Subject()
+    public attached = false
     public stopEntry = true
     private socket!: Socket
     private url!: string
@@ -58,6 +60,8 @@ export class DashmipsDebugClient extends EventEmitter {
     }
 
     private onOpen = () => {
+        this.attached = true
+        this.checkAttach.notify()
         this.socket.on('data', this.onMessage)
         this.socket.on('close', this.onError)
         this.socket.on('error', this.onError)
@@ -65,6 +69,7 @@ export class DashmipsDebugClient extends EventEmitter {
     }
 
     private notConnected = () => {
+        this.checkAttach.notify()
         if (this.running) {
             setTimeout(() => this.socket.connect(this.port, this.host), 100)
         }
