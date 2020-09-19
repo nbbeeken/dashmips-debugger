@@ -18,6 +18,7 @@ import { DebugProtocol } from 'vscode-debugprotocol'
 import { DashmipsBreakpointInfo } from './models'
 import { Subject } from './subject'
 import { pattern } from './memory_content'
+import { Mutex } from 'async-mutex'
 import * as vscode from 'vscode'
 
 const DEBUG_LOGS = true
@@ -61,6 +62,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     private breakpoints: DashmipsBreakpointInfo[] = []
     private client: DashmipsDebugClient
     private config?: LaunchRequestArguments | AttachRequestArguments | any
+    private breakpoints_mutex = new Mutex()
     public memoryProvider?: any
     public program_path = ''
 
@@ -77,16 +79,20 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         this.client.on('continue', () => {
             this.sendEvent(new StoppedEvent('breakpoint', THREAD_ID))
+            this.memoryProvider.stopped = true
             this.visualize()
         })
         this.client.on('step', () => {
             this.sendEvent(new StoppedEvent('step', THREAD_ID))
+            this.memoryProvider.stopped = true
             this.visualize()
         })
         this.client.on('error', () => {
+            this.memoryProvider.stopped = true
             this.sendEvent(new TerminatedEvent())
         })
         this.client.on('exited', () => {
+            this.memoryProvider.stopped = true
             this.sendEvent(new TerminatedEvent())
         })
     }
@@ -140,6 +146,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
+        this.memoryProvider.stopped = false // This is for setting breakpoints while waiting on input bug
         this.config = args
         if (!args.host || !args.port) {
             vscode.window.showErrorMessage('Please include host and/or port in launch.json.')
@@ -176,6 +183,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
     }
 
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
+        this.memoryProvider.stopped = false // This is for setting breakpoints while waiting on input bug
         this.config = args
         this.client.connect(args.host, args.port)
 
@@ -208,6 +216,8 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             return this.sendResponse(response)
         }
 
+        const release = await this.breakpoints_mutex.acquire()
+
         let path1 = this.convertDebuggerPathToClient(args.source.path!).split('\\').join('/')
         if (path1[0] !== '/') {
             path1 = '/' + path1
@@ -219,6 +229,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
         // Compare the two strings minus the home directory
         if (path1.split('/').slice(2).join('/') !== path2.split('/').slice(2).join('/')) {
+            release()
             return this.sendResponse(response)
         }
 
@@ -259,6 +270,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             }
             this.client.verified.notifyAll()
             // Breakpoints are verified by locations argument
+            release()
             return this.sendResponse(response)
         })
     }
@@ -395,11 +407,13 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async continueRequest(response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments) {
         this.client.call('continue', this.breakpoints)
+        this.memoryProvider.stopped = false
         this.sendResponse(response)
     }
 
     protected async nextRequest(response: DebugProtocol.NextResponse, args: DebugProtocol.NextArguments) {
         this.client.call('step')
+        this.memoryProvider.stopped = false
         this.sendResponse(response)
     }
 
