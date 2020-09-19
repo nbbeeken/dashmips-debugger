@@ -5,6 +5,7 @@ import * as path from 'path'
 export const pattern = '\\'
 
 export class MemoryContentProvider implements vscode.TextDocumentContentProvider {
+    public stopped = true
     public factory?: vscode.DebugAdapterDescriptorFactory
     public text?: string
     public onDidChangeEmitter = new vscode.EventEmitter<vscode.Uri>()

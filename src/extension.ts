@@ -11,12 +11,17 @@ import {
     WorkspaceFolder,
     debug,
 } from 'vscode'
+import { randomBytes } from 'crypto'
+import { tmpdir } from 'os'
+import { join } from 'path'
+import { platform } from 'process'
 import { execSync } from 'child_process'
 import { DashmipsDebugSession } from './debug'
 import { registerCommands } from './commands'
 import { MemoryContentProvider, pattern } from './memory_content'
+import { DashmipsHoverProvider } from './hover_provider'
 
-const EMBED_DEBUG_ADAPTER = true
+const runMode: 'server' | 'namedPipeServer' | 'inline' = 'inline'
 
 export async function activate(context: vscode.ExtensionContext) {
     try {
@@ -43,11 +48,13 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
     context.subscriptions.push(provider)
 
     const memoryProvider = new MemoryContentProvider()
-    const registration = Disposable.from(
-        vscode.workspace.registerTextDocumentContentProvider('visual', memoryProvider)
-    )
+    const registration = Disposable.from(vscode.workspace.registerTextDocumentContentProvider('visual', memoryProvider))
 
     context.subscriptions.push(registration)
+
+    context.subscriptions.push(
+        vscode.languages.registerHoverProvider([{ scheme: 'file', language: 'mips' }], new DashmipsHoverProvider())
+    )
 
     registerCommands()
 
@@ -56,7 +63,8 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
             for (let i = 0; i < vscode.workspace.textDocuments.length; i++) {
                 if (
                     vscode.workspace.textDocuments[i].uri.scheme == 'visual' &&
-                    vscode.workspace.textDocuments[i].uri.authority.split(pattern).join(path.sep) == e.uri.path.toLowerCase()
+                    vscode.workspace.textDocuments[i].uri.authority.split(pattern).join(path.sep) ==
+                        e.uri.path.toLowerCase()
                 ) {
                     const documentUriToUpdate = vscode.workspace.textDocuments[i].uri
                     memoryProvider.onDidChangeEmitter.fire(documentUriToUpdate)
@@ -65,10 +73,46 @@ async function activateUnsafe(context: vscode.ExtensionContext) {
         }
     })
 
-    if (EMBED_DEBUG_ADAPTER) {
-        const factory = new InlineDebugAdapterFactory()
+    let factory: any
+    switch (runMode) {
+        case 'server':
+            // run the debug adapter as a server inside the extension and communicate via a socket
+            factory = new DashmipsDebugAdapterDescriptorFactory()
+            break
+
+        case 'namedPipeServer':
+            // run the debug adapter as a server inside the extension and communicate via a named pipe (Windows) or UNIX domain socket (non-Windows)
+            factory = new DashmipsDebugAdapterNamedPipeServerDescriptorFactory()
+            break
+
+        case 'inline':
+            // run the debug adapter inside the extension and directly talk to it
+            factory = new DashmipsInlineDebugAdapterFactory()
+            break
+    }
+    if (factory) {
         factory.memoryProvider = memoryProvider
         context.subscriptions.push(vscode.debug.registerDebugAdapterDescriptorFactory('dashmips', factory))
+        if ('dispose' in factory) {
+            context.subscriptions.push(factory)
+        }
+
+        let ignore = false
+        vscode.debug.onDidChangeBreakpoints((e: vscode.BreakpointsChangeEvent) => {
+            if (!factory.memoryProvider.stopped && !ignore) {
+                ignore = true
+                vscode.window.showErrorMessage('Unable to modify breakpoints while blocked on I/O.')
+                if (e.added.length > 0) {
+                    vscode.debug.removeBreakpoints(e.added.slice())
+                }
+                if (e.removed.length > 0) {
+                    vscode.debug.addBreakpoints(e.removed.slice())
+                }
+            } else {
+                // ignore ensures no recursion (onDidChangeBreakpoints continuing to be called by itself)
+                ignore = false
+            }
+        })
     }
 }
 
@@ -125,7 +169,6 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
 }
 
 export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
-    // NOTE: CURRENTLY USING InlineDebugAdapterFactory INSTEAD OF THIS FACTORY
     public memoryProvider?: vscode.TextDocumentContentProvider
     private server?: Net.Server
 
@@ -155,12 +198,44 @@ export class DashmipsDebugAdapterDescriptorFactory implements vscode.DebugAdapte
     }
 }
 
-export class InlineDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
+export class DashmipsInlineDebugAdapterFactory implements vscode.DebugAdapterDescriptorFactory {
     public memoryProvider?: vscode.TextDocumentContentProvider
 
-	createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
-		return new vscode.DebugAdapterInlineImplementation(new DashmipsDebugSession());
-	}
+    createDebugAdapterDescriptor(_session: vscode.DebugSession): ProviderResult<vscode.DebugAdapterDescriptor> {
+        const session = new DashmipsDebugSession()
+        session.memoryProvider = this.memoryProvider
+        return new vscode.DebugAdapterInlineImplementation(session)
+    }
+}
+
+class DashmipsDebugAdapterNamedPipeServerDescriptorFactory implements vscode.DebugAdapterDescriptorFactory {
+    private server?: Net.Server
+    public memoryProvider?: vscode.TextDocumentContentProvider
+
+    createDebugAdapterDescriptor(
+        session: vscode.DebugSession,
+        executable: vscode.DebugAdapterExecutable | undefined
+    ): vscode.ProviderResult<vscode.DebugAdapterDescriptor> {
+        if (!this.server) {
+            // start listening on a random named pipe path
+            const pipeName = randomBytes(10).toString('utf8')
+            const pipePath = platform === 'win32' ? join('\\\\.\\pipe\\', pipeName) : join(tmpdir(), pipeName)
+
+            this.server = Net.createServer((socket) => {
+                const session = new DashmipsDebugSession()
+                session.memoryProvider = this.memoryProvider
+                session.setRunAsServer(true)
+                session.start(<NodeJS.ReadableStream>socket, socket)
+            }).listen(pipePath)
+        }
+        return new vscode.DebugAdapterNamedPipeServer(this.server.address() as string)
+    }
+
+    dispose() {
+        if (this.server) {
+            this.server.close()
+        }
+    }
 }
 
 export function checkDashmipsExists(): boolean {
