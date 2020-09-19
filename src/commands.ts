@@ -102,16 +102,4 @@ export function registerCommands() {
         const newUri = document.uri.with({ path: newPath })
         await vscode.window.showTextDocument(newUri, { preview: false })
     })
-
-    vscode.commands.registerCommand('View variables while debugging Decimal', async () => {
-        return
-    })
-
-    vscode.commands.registerCommand('View variables while debugging Hex', async () => {
-        return
-    })
-
-    vscode.commands.registerCommand('View variables while debugging Ascii', async () => {
-        return
-    })
 }
