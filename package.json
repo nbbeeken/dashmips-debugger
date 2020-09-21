@@ -125,8 +125,6 @@
                 "configurationAttributes": {
                     "launch": {
                         "required": [
-                            "host",
-                            "port",
                             "program"
                         ],
                         "properties": {
@@ -143,12 +141,12 @@
                             "cwd": {
                                 "type": "string",
                                 "description": "Path to terminal",
-                                "default": "^\"\\${workspaceFolder}\""
+                                "default": "${workspaceFolder}"
                             },
                             "program": {
                                 "type": "string",
                                 "description": "Path to mips file with main label",
-                                "default": "^\"\\${file}\""
+                                "default": "${file}"
                             },
                             "registerFormat": {
                                 "enum": [
@@ -232,47 +230,28 @@
                         }
                     }
                 },
-                "initialConfigurations": [
-                    {
-                        "type": "dashmips",
-                        "request": "launch",
-                        "name": "Dashmips (Run Current File)",
-                        "program": "^\"\\${file}\"",
-                        "registerFormat": "dec",
-                        "host": "localhost",
-                        "port": 2390,
-                        "cwd": "^\"\\${workspaceFolder}\"",
-                        "dashmipsCommand": "python -m dashmips debug",
-                        "dashmipsArgs": [
-                            "-i",
-                            "localhost",
-                            "-p",
-                            "2390"
-                        ],
-                        "args": [],
-                        "stopOnEntry": false
-                    },
-                    {
-                        "type": "dashmips",
-                        "request": "attach",
-                        "name": "Dashmips (Attach)",
-                        "registerFormat": "dec",
-                        "host": "localhost",
-                        "port": 2390,
-                        "stopOnEntry": false
-                    }
-                ],
+                "initialConfigurations": [],
                 "configurationSnippets": [
                     {
-                        "label": "Dashmips (Run Current File)",
+                        "label": "Dashmips (Run)",
                         "description": "Run the current MIPS file.",
                         "body": {
                             "type": "dashmips",
                             "request": "launch",
-                            "name": "Dashmips (Run Current File)",
-                            "program": "^\"\\${file}\"",
+                            "name": "Dashmips (Run)",
+                            "program": "${file}"
+                        }
+                    },
+                    {
+                        "label": "Dashmips (Run With Logging)",
+                        "description": "Run the current MIPS file with logging.",
+                        "body": {
+                            "type": "dashmips",
+                            "request": "launch",
+                            "name": "Dashmips (Run With Logging)",
+                            "program": "${file}",
                             "registerFormat": "dec",
-                            "cwd": "^\"\\${workspaceFolder}\"",
+                            "cwd": "${workspaceFolder}",
                             "host": "localhost",
                             "port": 2390,
                             "dashmipsCommand": "python -m dashmips debug",
@@ -280,7 +259,8 @@
                                 "-i",
                                 "localhost",
                                 "-p",
-                                "2390"
+                                "2390",
+                                "-l"
                             ],
                             "args": [],
                             "stopOnEntry": false

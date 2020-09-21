@@ -133,8 +133,8 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
             // No configuration generated yet
             const editor = vscode.window.activeTextEditor
             if (editor && editor.document.languageId === 'mips') {
-                config.type = 'dashmips'
-                config.name = 'dashmips (Run Current File)'
+                config.type = 'Dashmips'
+                config.name = 'Dashmips (Run With Logging)'
                 config.request = 'launch'
                 config.program = '${file}'
                 config.dashmipsCommand = 'python -m dashmips debug'
@@ -150,7 +150,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
             dashmipsArgs: [],
             console: 'integratedTerminal',
             dashmipsCommand: 'python -m dashmips debug',
-            name: 'dashmips (Run Current File)',
+            name: 'Dashmips (Run With Logging)',
         }
 
         const attachDefaults = {
