@@ -165,7 +165,7 @@ export class DashmipsDebugSession extends LoggingDebugSession {
             name: args.name,
             program: args.program,
             registerFormat: args.registerFormat || 'dec',
-            cwd: args.cwd || '${workspaceFolder}',
+            cwd: args.cwd || '^"\\${workspaceFolder}"',
             host: args.host || 'localhost',
             port: args.port || 2390,
             dashmipsCommand: args.dashmipsCommand || 'python -m dashmips debug',

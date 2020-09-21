@@ -141,12 +141,12 @@
                             "cwd": {
                                 "type": "string",
                                 "description": "Path to terminal",
-                                "default": "${workspaceFolder}"
+                                "default": "^\"\\${workspaceFolder}\""
                             },
                             "program": {
                                 "type": "string",
                                 "description": "Path to mips file with main label",
-                                "default": "${file}"
+                                "default": "^\"\\${file}\""
                             },
                             "registerFormat": {
                                 "enum": [
@@ -239,7 +239,7 @@
                             "type": "dashmips",
                             "request": "launch",
                             "name": "Dashmips (Run)",
-                            "program": "${file}"
+                            "program": "^\"\\${file}\""
                         }
                     },
                     {
@@ -249,9 +249,9 @@
                             "type": "dashmips",
                             "request": "launch",
                             "name": "Dashmips (Run With Logging)",
-                            "program": "${file}",
+                            "program": "^\"\\${file}\"",
                             "registerFormat": "dec",
-                            "cwd": "${workspaceFolder}",
+                            "cwd": "^\"\\${workspaceFolder}\"",
                             "host": "localhost",
                             "port": 2390,
                             "dashmipsCommand": "python -m dashmips debug",
