@@ -38,6 +38,8 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     name: string
     /** An absolute path to the "program" to debug. */
     program: string
+    /** An absolute path to the current working directory of the program */
+    cwd: string
     /** Format register values */
     registerFormat?: 'hex' | 'oct' | 'dec' | 'bin'
     /** Where to launch the debug target: integrated terminal, or external terminal. */
@@ -48,13 +50,25 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
     dashmipsArgs: string[]
     /** The command used to launch dashmips debugger */
     dashmipsCommand: string
+    /** The host to connect the socket to */
     host: string
+    /** The port to connect the socket to */
     port: number
+    /** If debugger should stop on first line or not */
+    stopOnEntry: boolean
 }
 
 interface AttachRequestArguments extends DebugProtocol.AttachRequestArguments {
+    /** Identifier */
+    name: string
+    /** Format register values */
+    registerFormat?: 'hex' | 'oct' | 'dec' | 'bin'
+    /** The host to connect the socket to */
     host: string
+    /** The port to connect the socket to */
     port: number
+    /** If debugger should stop on first line or not */
+    stopOnEntry: boolean
 }
 
 export class DashmipsDebugSession extends LoggingDebugSession {
@@ -147,13 +161,20 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
         this.memoryProvider.stopped = false // This is for setting breakpoints while waiting on input bug
-        this.config = args
-        if (!args.host || !args.port) {
-            vscode.window.showErrorMessage('Please include host and/or port in launch.json.')
-            this.sendEvent(new TerminatedEvent())
-            return
+        this.config = {
+            name: args.name,
+            program: args.program,
+            registerFormat: args.registerFormat || 'dec',
+            cwd: args.cwd || '^"\\${workspaceFolder}"',
+            host: args.host || 'localhost',
+            port: args.port || 2390,
+            dashmipsCommand: args.dashmipsCommand || 'python -m dashmips debug',
+            dashmipsArgs: args.dashmipsArgs || ['-i', 'localhost', '-p', '2390'],
+            args: args.args || [],
+            stopOnEntry: args.stopOnEntry || false,
         }
-        this.client.connect(args.host, args.port)
+
+        this.client.connect(this.config.host, this.config.port)
 
         await this.client.checkAttach.wait(0)
         if (!this.client.attached) {
@@ -184,8 +205,14 @@ export class DashmipsDebugSession extends LoggingDebugSession {
 
     protected async attachRequest(response: DebugProtocol.AttachResponse, args: AttachRequestArguments) {
         this.memoryProvider.stopped = false // This is for setting breakpoints while waiting on input bug
-        this.config = args
-        this.client.connect(args.host, args.port)
+        this.config = {
+            name: args.name,
+            registerFormat: args.registerFormat || 'dec',
+            host: args.host || 'localhost',
+            port: args.port || 2390,
+            stopOnEntry: args.stopOnEntry || false,
+        }
+        this.client.connect(this.config.host, this.config.port)
 
         this.client.call('start')
         this.client.once('start', async (pid) => {
