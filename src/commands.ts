@@ -9,6 +9,9 @@ function get_filename() {
         if (vscode.window.activeTextEditor?.document.uri.path.includes(pattern)) {
             vscode.window.showErrorMessage('Error: path to file cannot contain sequence: ' + pattern)
             return 'Error: Pattern'
+        } else if (vscode.window.activeTextEditor?.document.uri.path.includes(' ')) {
+            vscode.window.showErrorMessage('Error: path to file cannot contain spaces')
+            return 'Error: Pattern'
         } else {
             return vscode.window.activeTextEditor?.document.uri.path.split(path.sep).join(pattern)
         }

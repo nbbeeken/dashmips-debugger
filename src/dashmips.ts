@@ -4,7 +4,6 @@ import { EventEmitter } from 'events'
 import { logger } from 'vscode-debugadapter'
 import { DebugProtocol } from 'vscode-debugprotocol'
 import { Subject } from './subject'
-import * as vscode from 'vscode'
 
 export interface DashmipsDebugClient {
     on(event: 'start', listener: (pid: { pid: number }) => void): this
