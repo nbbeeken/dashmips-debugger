@@ -22,7 +22,7 @@ None yet.
 
 ## Known Issues
 
-N/A
+None known.
 
 ## Release Notes
 
