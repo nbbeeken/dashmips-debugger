@@ -127,7 +127,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
         config: DebugConfiguration,
         token?: CancellationToken
     ): ProviderResult<DebugConfiguration> {
-        const pythonCommand = vscode.workspace.getConfiguration().get('dashmips.pythonCommand') || python
+        const pythonCommand = vscode.workspace.getConfiguration().get('dashmips.pythonCommand') || 'python'
         config.internalConsoleOptions = 'neverOpen'
 
         if (!config.type && !config.request && !config.name) {
