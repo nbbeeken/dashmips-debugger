@@ -138,7 +138,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
                 config.name = 'Dashmips (Run With Logging)'
                 config.request = 'launch'
                 config.program = '^"\\${file}"'
-				config.registerFormat 'dec',
+                config.registerFormat 'dec'
                 config.dashmipsCommand = pythonCommand + ' -m dashmips debug'
             }
         }
