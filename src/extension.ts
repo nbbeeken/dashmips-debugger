@@ -127,6 +127,7 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
         config: DebugConfiguration,
         token?: CancellationToken
     ): ProviderResult<DebugConfiguration> {
+        const pythonCommand = vscode.workspace.getConfiguration().get('dashmips.pythonCommand') || python
         config.internalConsoleOptions = 'neverOpen'
 
         if (!config.type && !config.request && !config.name) {
@@ -137,7 +138,8 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
                 config.name = 'Dashmips (Run With Logging)'
                 config.request = 'launch'
                 config.program = '^"\\${file}"'
-                config.dashmipsCommand = 'python -m dashmips debug'
+				config.registerFormat 'dec',
+                config.dashmipsCommand = pythonCommand + ' -m dashmips debug'
             }
         }
 
@@ -149,7 +151,8 @@ export class DashmipsConfigurationProvider implements DebugConfigurationProvider
             args: [],
             dashmipsArgs: [],
             console: 'integratedTerminal',
-            dashmipsCommand: 'python -m dashmips debug',
+            registerFormat: 'dec',
+            dashmipsCommand: pythonCommand + ' -m dashmips debug',
             name: 'Dashmips (Run With Logging)',
         }
 
@@ -239,8 +242,9 @@ class DashmipsDebugAdapterNamedPipeServerDescriptorFactory implements vscode.Deb
 }
 
 export function checkDashmipsExists(): boolean {
+    const pythonCommand = vscode.workspace.getConfiguration().get('dashmips.pythonCommand') || 'python'
     try {
-        execSync('python -m dashmips -v', { encoding: 'utf8' })
+        execSync(pythonCommand + ' -m dashmips -v', { encoding: 'utf8' })
         return true
     } catch {
         return false
