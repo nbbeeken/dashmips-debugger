@@ -76,6 +76,16 @@
                         "type": "boolean",
                         "default": true,
                         "description": "Check to see if dashmips is installed, will offer to install if not"
+                    },
+                    "dashmips.debugCommand": {
+                        "type": "string",
+                        "default": "python -m dashmips debug",
+                        "description": "Default command to run dashmips in. If you have a later version of Python installed you may want to change it here. Eg. /usr/bin/python3"
+                    },
+                    "dashmips.existsCommand": {
+                        "type": "string",
+                        "default": "python -m dashmips -v",
+                        "description": "Default command to check for dashmips with. If you have a later version of Python installed you may want to change it here. Eg. /usr/bin/python3"
                     }
                 }
             }
@@ -239,7 +249,9 @@
                             "type": "dashmips",
                             "request": "launch",
                             "name": "Dashmips (Run)",
-                            "program": "^\"\\${file}\""
+                            "program": "^\"\\${file}\"",
+                            "registerFormat": "dec",
+                            "dashmipsCommand": "python -m dashmips debug"
                         }
                     },
                     {
@@ -276,6 +288,7 @@
                             "registerFormat": "dec",
                             "host": "localhost",
                             "port": 2390,
+                            "dashmipsCommand": "python -m dashmips debug",
                             "stopOnEntry": false
                         }
                     }
