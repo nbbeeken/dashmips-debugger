@@ -3,6 +3,7 @@
 	"scopeName": "source.mips",
 	"fileTypes": [
 		"dmips",
+		"asm",
 		"mips"
 	],
 	"patterns": [
