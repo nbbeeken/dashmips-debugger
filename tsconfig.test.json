@@ -3,6 +3,8 @@
         "module": "commonjs",
         "target": "es2019",
         "outDir": "out-test",
+        "rootDir": ".",
+        "types": ["node", "mocha"],
         "lib": [
             "es2019"
         ],

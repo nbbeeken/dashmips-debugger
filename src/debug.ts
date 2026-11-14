@@ -11,10 +11,10 @@ import {
     Thread,
     logger,
     Event,
-} from 'vscode-debugadapter'
+} from '@vscode/debugadapter'
 import { DashmipsDebugClient, buildTerminalLaunchRequestParams } from './dashmips'
 import { basename } from 'path'
-import { DebugProtocol } from 'vscode-debugprotocol'
+import { DebugProtocol } from '@vscode/debugprotocol'
 import { DashmipsBreakpointInfo } from './models'
 import { Subject } from './subject'
 import { pattern } from './memory_content'

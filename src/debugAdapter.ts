@@ -1,4 +1,4 @@
-const process = require('process')
+import process from 'process'
 import { DashmipsDebugSession } from './debug'
 
 process.stdin.on('error', () => {})

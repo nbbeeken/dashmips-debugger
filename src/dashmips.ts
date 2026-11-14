@@ -1,31 +1,22 @@
 import { Socket } from 'net'
 import { DashmipsBreakpointInfo, DashmipsResponse, DebuggerMethods, InfoRPCReturn } from './models'
-import { EventEmitter } from 'events'
-import { logger } from 'vscode-debugadapter'
-import { DebugProtocol } from 'vscode-debugprotocol'
+import { EventEmitter } from 'node:events'
+import { logger } from '@vscode/debugadapter'
+import { DebugProtocol } from '@vscode/debugprotocol'
 import { Subject } from './subject'
 
-export interface DashmipsDebugClient {
-    on(event: 'start', listener: (pid: { pid: number }) => void): this
-    on(event: 'exited', listener: () => void): this
-    on(event: 'continue', listener: () => void): this
-    on(event: 'step', listener: () => void): this
-    on(event: 'info', listener: (_: InfoRPCReturn) => void): this
-    on(event: 'error', listener: (error?: Error) => void): this
-    on(event: 'verify_breakpoints', listener: (_: [DashmipsBreakpointInfo[], number[]]) => void): this
-    on(event: 'update_visualizer', listener: (t: string) => void): this
-
-    once(event: 'start', listener: (pid: { pid: number }) => void): this
-    once(event: 'exited', listener: () => void): this
-    once(event: 'continue', listener: () => void): this
-    once(event: 'step', listener: () => void): this
-    once(event: 'info', listener: (_: InfoRPCReturn) => void): this
-    once(event: 'error', listener: (error?: Error) => void): this
-    once(event: 'verify_breakpoints', listener: (_: [DashmipsBreakpointInfo[], number[]]) => void): this
-    once(event: 'update_visualizer', listener: (t: string) => void): this
+export interface DashmipsDebugClientEvents {
+    start: [pid: { pid: number }]
+    exited: [idk?: any]
+    continue: []
+    step: []
+    info: [_: InfoRPCReturn]
+    error: [error?: Error]
+    verify_breakpoints: [_: [DashmipsBreakpointInfo[], number[]]]
+    update_visualizer: [t: string]
 }
 
-export class DashmipsDebugClient extends EventEmitter {
+export class DashmipsDebugClient extends EventEmitter<DashmipsDebugClientEvents> {
     public dashmipsPid = -1
     public open = new Subject()
     public verified = new Subject()
@@ -136,7 +127,7 @@ export class DashmipsDebugClient extends EventEmitter {
 type BuildTermParams = [
     DebugProtocol.RunInTerminalRequestArguments,
     number,
-    (response: DebugProtocol.RunInTerminalResponse) => void
+    (response: DebugProtocol.RunInTerminalResponse) => void,
 ]
 export function buildTerminalLaunchRequestParams(launchArgs: any): BuildTermParams {
     // This will never reject, since vscode is weird with long running processes

@@ -1,4 +1,4 @@
-// import { DebugClient } from 'vscode-debugadapter-testsupport'
+// import { DebugClient } from '@vscode/debugadapter-testsupport'
 // You can import and use all API from the 'vscode' module
 // as well as import your extension to test it
 import * as vscode from 'vscode'

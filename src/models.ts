@@ -51,13 +51,7 @@ export interface InfoRPCReturn extends RPCReturn {
 }
 
 export type DebuggerMethods =
-    | 'start'
-    | 'step'
-    | 'continue'
-    | 'stop'
-    | 'info'
-    | 'verify_breakpoints'
-    | 'update_visualizer'
+    'start' | 'step' | 'continue' | 'stop' | 'info' | 'verify_breakpoints' | 'update_visualizer'
 
 export interface DashmipsResponse {
     method: DebuggerMethods

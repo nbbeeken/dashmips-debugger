@@ -1,6 +1,10 @@
 import * as path from 'path'
-import * as Mocha from 'mocha'
-import * as glob from 'glob'
+import Mocha from 'mocha'
+import { glob as globP } from 'glob'
+import util from 'node:util'
+
+const glob: (ptn: string, options: any, cb: (err: Error | null, files: string[]) => void) => void =
+    util.callbackify(globP)
 
 export function run(): Promise<void> {
     // Create the mocha test

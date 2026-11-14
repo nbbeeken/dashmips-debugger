@@ -1,5 +1,5 @@
 interface IWaiter {
-    timeout: NodeJS.Timer | null
+    timeout: number | undefined
     resolve: (noRemove?: boolean) => void
 }
 
@@ -18,7 +18,7 @@ export class Subject {
                 resolved = true
                 if (waiter.timeout) {
                     clearTimeout(waiter.timeout)
-                    waiter.timeout = null
+                    waiter.timeout = undefined
                 }
                 if (!noRemove) {
                     const pos = this.waiters.indexOf(waiter)
@@ -30,8 +30,8 @@ export class Subject {
             }
         })
         if (timeout > 0 && isFinite(timeout)) {
-            waiter.timeout = setTimeout(function () {
-                waiter.timeout = null
+            waiter.timeout = +setTimeout(function () {
+                waiter.timeout = undefined
                 waiter.resolve()
             }, timeout)
         }
