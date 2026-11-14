@@ -16,7 +16,7 @@
     "categories": [
         "Debuggers"
     ],
-    "main": "./out/extension.js",
+    "main": "./out/src/extension.js",
     "activationEvents": [
         "onDebugResolve:mips"
     ],
@@ -116,7 +116,7 @@
             {
                 "type": "dashmips",
                 "label": "Dashmips",
-                "program": "./out/debugAdapter.js",
+                "program": "./out/src/debugAdapter.js",
                 "runtime": "node",
                 "languages": [
                     "mips"

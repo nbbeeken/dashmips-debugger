@@ -15,7 +15,7 @@ describe('A Dashmips extension for VSCode', () => {
 
     // let dc: DebugClient
 
-    // const DEBUG_ADAPTER = './out/debugAdapter.js'
+    // const DEBUG_ADAPTER = './out/src/debugAdapter.js'
 
     // setup(() => {
     //     dc = new DebugClient('node', DEBUG_ADAPTER, 'dashmips')
