@@ -2,7 +2,7 @@
     "name": "dashmips-debugger",
     "displayName": "dashmips-debugger",
     "description": "Debugs mips while executing in Dashmips interpreter",
-    "version": "0.1.14",
+    "version": "0.1.15",
     "license": "MIT",
     "publisher": "roadkillco",
     "repository": {
@@ -11,15 +11,14 @@
     },
     "icon": "images/dashmips-debugger-icon.png",
     "engines": {
-        "vscode": "^1.49.0"
+        "vscode": "^1.146.0"
     },
     "categories": [
         "Debuggers"
     ],
     "main": "./out/extension.js",
     "activationEvents": [
-        "onDebugResolve:mips",
-        "onLanguage:mips"
+        "onDebugResolve:mips"
     ],
     "contributes": {
         "menus": {
